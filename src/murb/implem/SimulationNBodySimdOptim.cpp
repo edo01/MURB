@@ -10,7 +10,7 @@
 
 #include "SimulationNBodySimdOptim.hpp"
 
-SimulationNBodySimdOPtim::SimulationNBodySimdOptim(const unsigned long nBodies, const std::string &scheme, const float soft,
+SimulationNBodySimdOptim::SimulationNBodySimdOptim(const unsigned long nBodies, const std::string &scheme, const float soft,
                                            const unsigned long randInit)
     : SimulationNBodyInterface(nBodies, scheme, soft, randInit)
 {
