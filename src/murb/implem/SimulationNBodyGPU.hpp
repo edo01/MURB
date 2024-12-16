@@ -8,6 +8,7 @@
 class SimulationNBodyGPU : public SimulationNBodyInterface {
   protected:
     accAoS_t<float> *d_accelerations; /*!< Acceleration structure on the device. */
+    dataAoS_t<float> *d_bodies;       /*!< Bodies structure on the device. */
     std::vector<accAoS_t<float>> accelerations; /*!< Array of body acceleration structures. */
 
   public:
@@ -15,9 +16,6 @@ class SimulationNBodyGPU : public SimulationNBodyInterface {
                          const unsigned long randInit = 0);
     virtual ~SimulationNBodyGPU();
     virtual void computeOneIteration();
-
-  protected:
-    virtual void finalize_iteration();
 };
 
 #endif /* SIMULATION_N_BODY_GPU_HPP_ */
