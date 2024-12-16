@@ -7,17 +7,17 @@
 
 class SimulationNBodyGPU : public SimulationNBodyInterface {
   protected:
+    accAoS_t<float> *d_accelerations; /*!< Acceleration structure on the device. */
     std::vector<accAoS_t<float>> accelerations; /*!< Array of body acceleration structures. */
 
   public:
     SimulationNBodyGPU(const unsigned long nBodies, const std::string &scheme = "galaxy", const float soft = 0.035f,
                          const unsigned long randInit = 0);
-    virtual ~SimulationNBodyGPU() = default;
+    virtual ~SimulationNBodyGPU();
     virtual void computeOneIteration();
 
   protected:
-    void initIteration();
-    void computeBodiesAcceleration();
+    virtual void finalize_iteration();
 };
 
 #endif /* SIMULATION_N_BODY_GPU_HPP_ */

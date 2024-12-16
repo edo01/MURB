@@ -4,7 +4,6 @@
 #include <iostream>
 #include <limits>
 #include <string>
-#include <arm_neon.h>
 #include <vector>
 
 
