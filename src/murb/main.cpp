@@ -19,6 +19,7 @@
 #include "utils/Perf.hpp"
 
 #include "implem/SimulationNBodyNaive.hpp"
+#include "implem/SimulationNBodyOptim.hpp"
 #include "implem/SimulationNBodyGPU.hpp"
 
 /* global variables */
@@ -76,6 +77,7 @@ void argsReader(int argc, char **argv)
     faculArgs["-im"] = "ImplTag";
     docArgs["-im"] = "code implementation tag:\n"
                      "\t\t\t - \"cpu+naive\"\n"
+                     "\t\t\t - \"optim\"\n"
                      "\t\t\t - \"gpu\"\n"
                      "\t\t\t ----";
     faculArgs["-soft"] = "softeningFactor";
@@ -185,7 +187,9 @@ SimulationNBodyInterface *createImplem()
     SimulationNBodyInterface *simu = nullptr;
     if (ImplTag == "cpu+naive") {
         simu = new SimulationNBodyNaive(NBodies, BodiesScheme, Softening);
-    } else if (ImplTag == "gpu") {
+    }else if (ImplTag == "optim") {
+        simu = new SimulationNBodyOptim(NBodies, BodiesScheme, Softening);
+    }else if (ImplTag == "gpu") {
         simu = new SimulationNBodyGPU(NBodies, BodiesScheme, Softening);
     }
     else {
