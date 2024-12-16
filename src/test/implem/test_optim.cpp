@@ -42,7 +42,7 @@ void test_nbody_optim(const size_t n, const float soft, const float dt, const si
     }
 }
 
-TEST_CASE("n-body - GPU", "[gpu]")
+TEST_CASE("n-body - Optim", "[optim]")
 {
     SECTION("fp32 - n=13 - i=1 - random") { test_nbody_optim(13, 2e+08, 3600, 1, "random", 1e-3); }
     SECTION("fp32 - n=13 - i=100 - random") { test_nbody_optim(13, 2e+08, 3600, 100, "random", 5e-3); }
