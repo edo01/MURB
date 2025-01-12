@@ -8,6 +8,7 @@ option (ENABLE_MURB      "Enable to compile the MUrB executable"        ON )
 option (ENABLE_VISU      "Enable the OpenGL visualization"              ON )
 option (ENABLE_TEST      "Enable test program to validate MUrB kernels" ON )
 option (ENABLE_MURB_OMP  "Enable to compile the MUrB OMP executable"    ON )
+option (ENABLE_VECTO    "Define the ENABLE_VECTO option"                OFF)
 option (ENABLE_MURB_OCL  "Enable to compile the MUrB OCL executable"    OFF)
 option (ENABLE_MURB_CUDA "Enable to compile MUsB CUDA executable"       ON)
 
@@ -21,6 +22,7 @@ message(STATUS "  * ENABLE_MURB: '${ENABLE_MURB}'")
 message(STATUS "  * ENABLE_VISU: '${ENABLE_VISU}'")
 message(STATUS "  * ENABLE_TEST: '${ENABLE_TEST}'")
 message(STATUS "  * ENABLE_MURB_OMP: '${ENABLE_MURB_OMP}'")
+message(STATUS "  * ENABLE_VECTO: '${ENABLE_VECTO}'")
 message(STATUS "  * ENABLE_MURB_OCL: '${ENABLE_MURB_OCL}'")
 message(STATUS "  * ENABLE_MURB_CUDA: '${ENABLE_MURB_CUDA}'")
 message(STATUS "MUrB info: ")
@@ -87,6 +89,10 @@ if (ENABLE_MURB)
     # set 32-bit floating point precision
     target_compile_definitions(murb-bin PUBLIC NBODY_FLOAT)
 
+    if (ENABLE_VECTO)
+        add_definitions(-DENABLE_VECTO)
+    endif ()
+
     if (ENABLE_TEST)
         file (GLOB_RECURSE source_test_files src/test/*)
         add_executable (test-bin $<TARGET_OBJECTS:common-lib> $<TARGET_OBJECTS:murb-implem-lib> ${source_test_files})
@@ -97,6 +103,11 @@ if (ENABLE_MURB)
         # include MUrB header
         target_include_directories (test-bin PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src/murb/implem")
         enable_testing()
+
+        if (ENABLE_VECTO)
+            add_definitions(-DENABLE_VECTO)
+        endif ()
+
         add_test(NAME murb::test COMMAND test-bin)
     endif ()
 endif ()
@@ -176,4 +187,8 @@ endif ()
 
 if ((ENABLE_MURB_CUDA) AND (ENABLE_MURB))
     targets_compile_definitions("${murb_targets_list}" PRIVATE USE_CUDA)
+endif ()
+
+if (ENABLE_VECTO)
+
 endif ()

@@ -80,8 +80,10 @@ void argsReader(int argc, char **argv)
     docArgs["-im"] = "code implementation tag:\n"
                      "\t\t\t - \"cpu+naive\"\n"
                      "\t\t\t - \"optim\"\n"
+#if defined(ENABLE_VECTO) && (defined(__ARM_NEON__) || defined(__ARM_NEON))
                      "\t\t\t - \"simd\"\n"
                      "\t\t\t - \"simd_optim\"\n"
+#endif
                      "\t\t\t - \"gpu\"\n"
                      "\t\t\t ----";
     faculArgs["-soft"] = "softeningFactor";
@@ -193,10 +195,12 @@ SimulationNBodyInterface *createImplem()
         simu = new SimulationNBodyNaive(NBodies, BodiesScheme, Softening);
     }else if (ImplTag == "optim") {
         simu = new SimulationNBodyOptim(NBodies, BodiesScheme, Softening);
+#if defined(ENABLE_VECTO) && (defined(__ARM_NEON__) || defined(__ARM_NEON))
     }else if (ImplTag == "simd") {
         simu = new SimulationNBodySimd(NBodies, BodiesScheme, Softening);
     }else if (ImplTag == "simd_optim") {
         simu = new SimulationNBodySimdOptim(NBodies, BodiesScheme, Softening);
+#endif
     }else if (ImplTag == "gpu") {
         simu = new SimulationNBodyGPU(NBodies, BodiesScheme, Softening);
     }

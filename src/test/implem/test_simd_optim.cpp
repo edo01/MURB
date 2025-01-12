@@ -6,6 +6,8 @@
 #include <random>
 #include <string>
 
+#if defined(ENABLE_VECTO) && (defined(__ARM_NEON__) || defined(__ARM_NEON))
+
 #include "SimulationNBodyNaive.hpp"
 #include "SimulationNBodySimdOptim.hpp"
 
@@ -58,3 +60,5 @@ TEST_CASE("n-body - SimdOptim", "[simd_optim]")
     SECTION("fp32 - n=2048 - i=4 - galaxy") { test_nbody_simd_optim(2048, 2e+08, 3600, 4, "galaxy", 1e-1); }
     SECTION("fp32 - n=2049 - i=3 - galaxy") { test_nbody_simd_optim(2049, 2e+08, 3600, 3, "galaxy", 1e-1); }
 }
+
+#endif

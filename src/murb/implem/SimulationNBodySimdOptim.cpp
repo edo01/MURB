@@ -4,9 +4,11 @@
 #include <iostream>
 #include <limits>
 #include <string>
-#include <arm_neon.h>
 #include <vector>
 
+#if defined(ENABLE_VECTO) && (defined(__ARM_NEON__) || defined(__ARM_NEON))
+
+#include <arm_neon.h>
 
 #include "SimulationNBodySimdOptim.hpp"
 
@@ -103,3 +105,4 @@ void SimulationNBodySimdOptim::computeOneIteration()
     // time integration
     this->bodies.updatePositionsAndVelocities(this->accelerations, this->dt);
 }
+#endif

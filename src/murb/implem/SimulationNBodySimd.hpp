@@ -3,6 +3,8 @@
 
 #include <string>
 
+#if defined(ENABLE_VECTO) && (defined(__ARM_NEON__) || defined(__ARM_NEON))
+
 #include "core/SimulationNBodyInterface.hpp"
 
 class SimulationNBodySimd : public SimulationNBodyInterface {
@@ -19,5 +21,7 @@ class SimulationNBodySimd : public SimulationNBodyInterface {
     void initIteration();
     void computeBodiesAcceleration();
 };
+
+#endif // ENABLE_VECTO && (__ARM_NEON__ || __ARM_NEON)
 
 #endif /* SIMULATION_N_BODY_SIMD_HPP_ */

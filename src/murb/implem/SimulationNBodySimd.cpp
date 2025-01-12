@@ -4,10 +4,11 @@
 #include <iostream>
 #include <limits>
 #include <string>
-#include <arm_neon.h>
 #include <vector>
 
+#if defined(ENABLE_VECTO) && (defined(__ARM_NEON__) || defined(__ARM_NEON))
 
+#include <arm_neon.h>
 #include "SimulationNBodySimd.hpp"
 
 SimulationNBodySimd::SimulationNBodySimd(const unsigned long nBodies, const std::string &scheme, const float soft,
@@ -94,3 +95,4 @@ void SimulationNBodySimd::computeOneIteration()
     // time integration
     this->bodies.updatePositionsAndVelocities(this->accelerations, this->dt);
 }
+#endif
