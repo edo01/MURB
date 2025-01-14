@@ -18,16 +18,6 @@ SimulationNBodyMipp::SimulationNBodyMipp(const unsigned long nBodies, const std:
     this->accelerations.az.resize(this->getBodies().getN());
 }
 
-void SimulationNBodyMipp::initIteration()
-{   
-    // memset to zero maybe is faster??
-    for (unsigned long iBody = 0; iBody < this->getBodies().getN(); iBody++) {
-        this->accelerations.ax[iBody] = 0.f;
-        this->accelerations.ay[iBody] = 0.f;
-        this->accelerations.az[iBody] = 0.f;
-    }
-}
-
 void SimulationNBodyMipp::computeBodiesAcceleration()
 {
     //const std::vector<dataAoS_t<float>> &d = this->getBodies().getDataAoS();
@@ -84,7 +74,6 @@ void SimulationNBodyMipp::computeBodiesAcceleration()
 
 void SimulationNBodyMipp::computeOneIteration()
 {
-    this->initIteration();
     this->computeBodiesAcceleration();
     // time integration
     this->bodies.updatePositionsAndVelocities(this->accelerations, this->dt);

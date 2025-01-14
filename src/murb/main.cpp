@@ -20,6 +20,7 @@
 
 #include "implem/SimulationNBodyNaive.hpp"
 #include "implem/SimulationNBodyOptim.hpp"
+#include "implem/SimulationNBodyOptimV2.hpp"
 #include "implem/SimulationNBodySimd.hpp"
 #include "implem/SimulationNBodySimdOptim.hpp"
 #include "implem/SimulationNBodyGPU.hpp"
@@ -82,6 +83,7 @@ void argsReader(int argc, char **argv)
     docArgs["-im"] = "code implementation tag:\n"
                      "\t\t\t - \"cpu+naive\"\n"
                      "\t\t\t - \"optim\"\n"
+                     "\t\t\t - \"optim_v2\"\n"
 #if defined(ENABLE_VECTO) && (defined(__ARM_NEON__) || defined(__ARM_NEON))
                      "\t\t\t - \"simd\"\n"
                      "\t\t\t - \"simd_optim\"\n"
@@ -199,6 +201,8 @@ SimulationNBodyInterface *createImplem()
         simu = new SimulationNBodyNaive(NBodies, BodiesScheme, Softening);
     }else if (ImplTag == "optim") {
         simu = new SimulationNBodyOptim(NBodies, BodiesScheme, Softening);
+    }else if (ImplTag == "optim_v2") {
+        simu = new SimulationNBodyOptimV2(NBodies, BodiesScheme, Softening);
 #if defined(ENABLE_VECTO) && (defined(__ARM_NEON__) || defined(__ARM_NEON))
     }else if (ImplTag == "simd") {
         simu = new SimulationNBodySimd(NBodies, BodiesScheme, Softening);
