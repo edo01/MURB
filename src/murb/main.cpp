@@ -24,6 +24,7 @@
 #include "implem/SimulationNBodySimdOptim.hpp"
 #include "implem/SimulationNBodyGPU.hpp"
 #include "implem/SimulationNBodyMipp.hpp"
+#include "implem/SimulationNBodyMippV2.hpp"
 
 /* global variables */
 unsigned long NBodies;               /*!< Number of bodies. */
@@ -87,6 +88,7 @@ void argsReader(int argc, char **argv)
 #endif
                      "\t\t\t - \"gpu\"\n"
                      "\t\t\t - \"mipp\"\n"
+                     "\t\t\t - \"mipp_v2\""
                      "\t\t\t ----";
     faculArgs["-soft"] = "softeningFactor";
     docArgs["-soft"] = "softening factor.";
@@ -205,6 +207,8 @@ SimulationNBodyInterface *createImplem()
 #endif
     }else if (ImplTag == "gpu") {
         simu = new SimulationNBodyGPU(NBodies, BodiesScheme, Softening);
+    }else if (ImplTag == "mipp_v2"){
+        simu = new SimulationNBodyMippV2(NBodies, BodiesScheme, Softening);
     }else if (ImplTag == "mipp") {
         simu = new SimulationNBodyMipp(NBodies, BodiesScheme, Softening);
     }
