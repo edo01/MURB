@@ -80,7 +80,7 @@ void SimulationNBodyMixedPrecision::computeBodiesAcceleration() {
                nBodies * sizeof(dataAoS_t<float>), cudaMemcpyHostToDevice);
 
     // Calling the mixed precision kernel function
-    size_t sharedMemSize = NTPB * sizeof(__half) * 3;
+    size_t sharedMemSize = NTPB * sizeof(__half);
     kernelComputeBodiesAccelerationMixedPrecision<<<NB, NTPB, sharedMemSize>>>(
         this->d_bodies, nBodies, softSquared, this->G, this->d_accelerations);
     cudaDeviceSynchronize();
@@ -110,7 +110,7 @@ void SimulationNBodyMixedPrecision::computeOneIteration()
     // compute the positions of the bodies
     std::copy(this->getBodies().getDataAoS().begin(), this->getBodies().getDataAoS().end(), this->d_bodies);
 
-    size_t sharedMemSize = NTPB * sizeof(__half) * 3;
+    size_t sharedMemSize = NTPB * sizeof(__half);
     kernelComputeBodiesAccelerationMixedPrecision<<<NB, NTPB, sharedMemSize>>>(this->d_bodies, this->getBodies().getN(), softSquared, this->G, this->d_accelerations);
     cudaDeviceSynchronize();
 
