@@ -27,7 +27,7 @@
 #include "implem/SimulationNBodyMipp.hpp"
 #include "implem/SimulationNBodyMippV2.hpp"
 #include "implem/SimulationNBodyMixedPrecision.hpp"
-
+#include "implem/SimulationNBodyBarnesHut.hpp"
 
 /* global variables */
 unsigned long NBodies;               /*!< Number of bodies. */
@@ -219,6 +219,8 @@ SimulationNBodyInterface *createImplem()
         simu = new SimulationNBodyMipp(NBodies, BodiesScheme, Softening);
     }else if (ImplTag == "mixed") {
         simu = new SimulationNBodyMixedPrecision(NBodies, BodiesScheme, Softening);
+    }else if (ImplTag == "barnes_hut") {
+        simu = new SimulationNBodyBarnesHut(NBodies, BodiesScheme, Softening);
     }
     else {
         std::cout << "Implementation '" << ImplTag << "' does not exist... Exiting." << std::endl;
