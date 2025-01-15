@@ -25,6 +25,9 @@
 #include "implem/SimulationNBodySimdOptim.hpp"
 #include "implem/SimulationNBodyGPU.hpp"
 #include "implem/SimulationNBodyMipp.hpp"
+#include "implem/SimulationNBodyMippV2.hpp"
+#include "implem/SimulationNBodyMixedPrecision.hpp"
+
 
 /* global variables */
 unsigned long NBodies;               /*!< Number of bodies. */
