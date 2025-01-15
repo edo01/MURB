@@ -18,16 +18,6 @@ SimulationNBodyMipp::SimulationNBodyMipp(const unsigned long nBodies, const std:
     this->accelerations.az.resize(this->getBodies().getN());
 }
 
-void SimulationNBodyMipp::initIteration()
-{   
-    // memset to zero maybe is faster??
-    for (unsigned long iBody = 0; iBody < this->getBodies().getN(); iBody++) {
-        this->accelerations.ax[iBody] = 0.f;
-        this->accelerations.ay[iBody] = 0.f;
-        this->accelerations.az[iBody] = 0.f;
-    }
-}
-
 void SimulationNBodyMipp::computeBodiesAcceleration()
 {
     //const std::vector<dataAoS_t<float>> &d = this->getBodies().getDataAoS();
@@ -46,15 +36,13 @@ void SimulationNBodyMipp::computeBodiesAcceleration()
     const mipp::Reg<float> r_G = mipp::Reg<float>(this->G);
 
     // flops = n² * 20
+    #pragma omp parallel for schedule(static,10)
     for (unsigned long iBody = 0; iBody < this->getBodies().getN(); iBody+=1) {
         // accumulators
         mipp::Reg<float> r_ax(0.f);
         mipp::Reg<float> r_ay(0.f);
         mipp::Reg<float> r_az(0.f);
         
-        /*mipp::Reg<float> r_qx_i = mipp::Reg<float>(&qx[iBody]);
-        mipp::Reg<float> r_qy_i = mipp::Reg<float>(&qy[iBody]);
-        mipp::Reg<float> r_qz_i = mipp::Reg<float>(&qz[iBody]);*/
         mipp::Reg<float> r_qx_i(qx[iBody]);
         mipp::Reg<float> r_qy_i(qy[iBody]);
         mipp::Reg<float> r_qz_i(qz[iBody]);
@@ -73,7 +61,6 @@ void SimulationNBodyMipp::computeBodiesAcceleration()
             mipp::Reg<float> r_mj(&m[jBody]);
             mipp::Reg<float> r_ai = r_G * r_mj / (r_rijSquared*mipp::sqrt(r_rijSquared)); // 5 flops // TRY WITH RSQRT OPERATION
             // add the acceleration value into the acceleration vector: ai += || ai ||.rij
-
             r_ax += r_ai * r_rijx; 
             r_ay += r_ai * r_rijy; 
             r_az += r_ai * r_rijz;
@@ -87,7 +74,6 @@ void SimulationNBodyMipp::computeBodiesAcceleration()
 
 void SimulationNBodyMipp::computeOneIteration()
 {
-    //this->initIteration();
     this->computeBodiesAcceleration();
     // time integration
     this->bodies.updatePositionsAndVelocities(this->accelerations, this->dt);
