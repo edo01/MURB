@@ -6,7 +6,6 @@
 #include <random>
 #include <string>
 
-#if defined(ENABLE_VECTO) && (defined(__ARM_NEON__) || defined(__ARM_NEON))
 
 #include "SimulationNBodyNaive.hpp"
 #include "SimulationNBodyBarnesHut.hpp"
