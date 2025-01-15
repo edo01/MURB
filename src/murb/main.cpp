@@ -24,6 +24,7 @@
 #include "implem/SimulationNBodySimdOptim.hpp"
 #include "implem/SimulationNBodyGPU.hpp"
 #include "implem/SimulationNBodyMipp.hpp"
+#include "implem/SimulationNBodyMixedPrecision.hpp"
 
 /* global variables */
 unsigned long NBodies;               /*!< Number of bodies. */
@@ -207,6 +208,8 @@ SimulationNBodyInterface *createImplem()
         simu = new SimulationNBodyGPU(NBodies, BodiesScheme, Softening);
     }else if (ImplTag == "mipp") {
         simu = new SimulationNBodyMipp(NBodies, BodiesScheme, Softening);
+    }else if (ImplTag == "mixed") {
+        simu = new SimulationNBodyMixedPrecision(NBodies, BodiesScheme, Softening);
     }
     else {
         std::cout << "Implementation '" << ImplTag << "' does not exist... Exiting." << std::endl;
