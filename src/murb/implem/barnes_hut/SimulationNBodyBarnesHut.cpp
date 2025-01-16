@@ -53,6 +53,7 @@ void SimulationNBodyBarnesHut::computeBodiesAcceleration(){
 
         std::vector<CoM<float>> coms = this->root->getCoM(com, this->theta);
         //printf("testing body %lu: %f %f %f %f\n", iBody, d[iBody].qx, d[iBody].qy, d[iBody].qz, d[iBody].m);
+        printf("size of coms: %lu\n", coms.size());
         for(unsigned long jBody=0; jBody<coms.size(); jBody++){
             //printf("\t testing com %lu: %f %f %f %f\n", jBody, coms[jBody].p.x, coms[jBody].p.y, coms[jBody].p.z, coms[jBody].m);
             float rijx = coms[jBody].p.x - qx_i;

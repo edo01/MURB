@@ -7,7 +7,7 @@
 #include <string>
 
 #include "SimulationNBodyNaive.hpp"
-#include "SimulationNBodyOptim.hpp"
+#include "cpu/SimulationNBodyOptim.hpp"
 
 void test_nbody_optim(const size_t n, const float soft, const float dt, const size_t nIte, const std::string &scheme,
                      const float eps)

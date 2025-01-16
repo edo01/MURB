@@ -47,8 +47,9 @@ void SimulationNBodyMippV2::computeBodiesAcceleration()
     const mipp::Reg<float> r_softSquared = mipp::Reg<float>(this->soft*this->soft);
     const mipp::Reg<float> r_G = mipp::Reg<float>(this->G);
 
+    const float softSquared = this->soft*this->soft;
+
     // flops = n² * 20
-    //#pragma omp parallel for schedule(static,10)
     for (unsigned long iBody = 0; iBody < this->getBodies().getN(); iBody++) {
         // accumulators
         mipp::Reg<float> r_ax_i(0.f);
@@ -72,9 +73,8 @@ void SimulationNBodyMippV2::computeBodiesAcceleration()
             // compute the acceleration value between body i and body j: || ai || = G.mj / (|| rij ||² + e²)^{3/2}
             r_rijSquared += r_softSquared;
             mipp::Reg<float> r_ai = r_G / (r_rijSquared*mipp::sqrt(r_rijSquared)); // 5 flops // TRY WITH RSQRT OPERATION
-            mipp::Reg<float> r_aj(r_ai);
+            mipp::Reg<float> r_aj(r_ai* r_m_i);
             r_ai = r_ai * mipp::Reg<float>(&m[jBody]); 
-            r_aj = r_aj * r_m_i; // acceleration on the jth body
 
             // add the acceleration value into the acceleration vector: ai += || ai ||.rij
             r_ax_i += r_ai * r_rijx; 
@@ -93,7 +93,7 @@ void SimulationNBodyMippV2::computeBodiesAcceleration()
             r_ay_j.store(&ay[jBody]);
             r_az_j.store(&az[jBody]);
 
-        } //MISSING THE REMINDER OF THE LOOP
+        }
 
         for(unsigned long j = jBody; j < this->getBodies().getN(); j++){
             const float rijx = qx[j] - qx[iBody];
@@ -101,7 +101,7 @@ void SimulationNBodyMippV2::computeBodiesAcceleration()
             const float rijz = qz[j] - qz[iBody];
 
             float rijSquared = rijx*rijx + rijy*rijy + rijz*rijz;
-            rijSquared += this->soft*this->soft;
+            rijSquared += softSquared;
             float ai = this->G / (rijSquared*std::sqrt(rijSquared));
             const float aj = ai * m[iBody];
             ai = ai * m[j];
@@ -118,13 +118,43 @@ void SimulationNBodyMippV2::computeBodiesAcceleration()
         ax[iBody] += mipp::sum(r_ax_i);
         ay[iBody] += mipp::sum(r_ay_i);
         az[iBody] += mipp::sum(r_az_i);
-
-        mipp::Reg<float> r_ax_j(ax[iBody]);
-        mipp::Reg<float> r_ay_j(ay[iBody]);
-        mipp::Reg<float> r_az_j(az[iBody]);
     }
 
+    /*for(unsigned long iBody = 0; iBody < this->getBodies().getN(); iBody++){
+        unsigned long start = this->getBodies().getN() - ((this->getBodies().getN() - iBody - 1) % mipp::N<float>());
 
+        const float qx_i = qx[iBody];
+        const float qy_i = qy[iBody];
+        const float qz_i = qz[iBody];
+        const float m_i = m[iBody];
+
+        float ax_i = 0.0f, ay_i = 0.0f, az_i = 0.0f; // Local accumulators for acceleration
+        
+        for(unsigned long j = start; j < this->getBodies().getN(); j++){
+            printf("iBody: %lu, j: %lu\n", iBody, j);
+            const float rijx = qx[j] - qx_i;
+            const float rijy = qy[j] - qy_i;
+            const float rijz = qz[j] - qz_i;
+
+            float rijSquared = rijx*rijx + rijy*rijy + rijz*rijz;
+            rijSquared += softSquared;
+            float ai = this->G / (rijSquared*std::sqrt(rijSquared));
+            const float aj = ai * m_i;
+            ai = ai * m[j];
+
+            ax_i += ai * rijx;
+            ay_i += ai * rijy;
+            az_i += ai * rijz;
+
+            ax[j] -= aj * rijx;
+            ay[j] -= aj * rijy;
+            az[j] -= aj * rijz;
+        }
+
+        ax[iBody] += ax_i;
+        ay[iBody] += ay_i;
+        az[iBody] += az_i;
+    }*/
 }
 
 void SimulationNBodyMippV2::computeOneIteration()

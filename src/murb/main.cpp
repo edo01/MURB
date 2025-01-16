@@ -19,13 +19,14 @@
 #include "utils/Perf.hpp"
 
 #include "implem/SimulationNBodyNaive.hpp"
-#include "implem/SimulationNBodyOptim.hpp"
-#include "implem/SimulationNBodyOptimV2.hpp"
-#include "implem/SimulationNBodySimd.hpp"
-#include "implem/SimulationNBodySimdOptim.hpp"
-#include "implem/SimulationNBodyGPU.hpp"
-#include "implem/SimulationNBodyMipp.hpp"
-#include "implem/SimulationNBodyMippV2.hpp"
+#include "implem/cpu/SimulationNBodyOptim.hpp"
+#include "implem/cpu/SimulationNBodyOptimV2.hpp"
+#include "implem/simd/SimulationNBodySimd.hpp"
+#include "implem/simd/SimulationNBodySimdOptim.hpp"
+#include "implem/gpu/SimulationNBodyGPU.hpp"
+#include "implem/simd/SimulationNBodyMipp.hpp"
+#include "implem/simd/SimulationNBodyMippV2.hpp"
+#include "implem/barnes_hut/SimulationNBodyBarnesHut.hpp"
 
 /* global variables */
 unsigned long NBodies;               /*!< Number of bodies. */
@@ -91,6 +92,7 @@ void argsReader(int argc, char **argv)
                      "\t\t\t - \"gpu\"\n"
                      "\t\t\t - \"mipp\"\n"
                      "\t\t\t - \"mipp_v2\""
+                     "\t\t\t - \"cpu+barnes\"\n"
                      "\t\t\t ----";
     faculArgs["-soft"] = "softeningFactor";
     docArgs["-soft"] = "softening factor.";
@@ -215,8 +217,9 @@ SimulationNBodyInterface *createImplem()
         simu = new SimulationNBodyMippV2(NBodies, BodiesScheme, Softening);
     }else if (ImplTag == "mipp") {
         simu = new SimulationNBodyMipp(NBodies, BodiesScheme, Softening);
-    }
-    else {
+    }else if (ImplTag == "cpu+barnes") {
+        simu = new SimulationNBodyBarnesHut(NBodies, BodiesScheme, Softening);
+    }else {
         std::cout << "Implementation '" << ImplTag << "' does not exist... Exiting." << std::endl;
         exit(-1);
     }

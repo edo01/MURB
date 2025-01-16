@@ -7,7 +7,7 @@
 #include <string>
 
 #include "SimulationNBodyNaive.hpp"
-#include "SimulationNBodyGPU.hpp"
+#include "gpu/SimulationNBodyGPU.hpp"
 
 void test_nbody_gpu(const size_t n, const float soft, const float dt, const size_t nIte, const std::string &scheme,
                      const float eps)

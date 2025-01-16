@@ -7,7 +7,7 @@
 #include <string>
 
 #include "SimulationNBodyNaive.hpp"
-#include "SimulationNBodyMippV2.hpp"
+#include "simd/SimulationNBodyMippV2.hpp"
 
 void test_nbody_mipp_v2(const size_t n, const float soft, const float dt, const size_t nIte, const std::string &scheme,
                      const float eps)

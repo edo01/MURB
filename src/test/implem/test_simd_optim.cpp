@@ -9,7 +9,7 @@
 #if defined(ENABLE_VECTO) && (defined(__ARM_NEON__) || defined(__ARM_NEON))
 
 #include "SimulationNBodyNaive.hpp"
-#include "SimulationNBodySimdOptim.hpp"
+#include "simd/SimulationNBodySimdOptim.hpp"
 
 void test_nbody_simd_optim(const size_t n, const float soft, const float dt, const size_t nIte, const std::string &scheme,
                      const float eps)
