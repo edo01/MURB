@@ -2,14 +2,16 @@
 #define SIMULATION_N_BODY_GPU_HPP_
 
 #include <string>
+#include <cuda_runtime.h>
 
 #include "core/SimulationNBodyInterface.hpp"
 
 class SimulationNBodyGPU : public SimulationNBodyInterface {
   protected:
-    accAoS_t<float> *d_accelerations; /*!< Acceleration structure on the device. */
-    dataAoS_t<float> *d_bodies;       /*!< Bodies structure on the device. */
-    std::vector<accAoS_t<float>> accelerations; /*!< Array of body acceleration structures. */
+    float* d_ax, *d_ay, *d_az; /*!< Acceleration components on the device. */
+    float* d_qx, *d_qy, *d_qz, *d_qm; /*!< Position components on the device. */
+
+    accSoA_t<float> accelerations; /*!< Array of body acceleration structures. */
 
   public:
     SimulationNBodyGPU(const unsigned long nBodies, const std::string &scheme = "galaxy", const float soft = 0.035f,
