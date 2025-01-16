@@ -2,7 +2,7 @@ import subprocess
 import json
 
 problem_sizes = [10, 50, 100, 200, 500, 1000, 2000]
-implementations = ["naive"]
+implementations = ["naive","optim", "optim_v2", "simd", "simd_optim", "gpu", "mipp", "mipp_v2", "mixed", "barnes_hut"]
 runs_per_implementation = 5  # Number of runs to minimize noise
 iterations = 100  # Fixed number of iterations per run
 
