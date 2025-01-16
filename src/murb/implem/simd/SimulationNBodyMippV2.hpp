@@ -18,6 +18,7 @@ class SimulationNBodyMippV2 : public SimulationNBodyInterface {
   protected:
     void initIteration();
     void computeBodiesAcceleration();
+    void computeBodiesAccelerationMasq();
 };
 
 #endif /* SIMULATION_N_BODY_NAIVE_HPP_ */
