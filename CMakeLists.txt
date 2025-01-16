@@ -189,6 +189,21 @@ if ((ENABLE_MURB_CUDA) AND (ENABLE_MURB))
     targets_compile_definitions("${murb_targets_list}" PRIVATE USE_CUDA)
 endif ()
 
+# Python integration
+find_package(Python REQUIRED COMPONENTS Interpreter)
+
+# Path to the Python benchmark script
+set(BENCHMARK_SCRIPT ${CMAKE_SOURCE_DIR}/src/test/mesure.py)
+# Add custom target to run the Python benchmark script
+add_custom_target(run_benchmark
+    COMMAND ${Python_EXECUTABLE} ${BENCHMARK_SCRIPT}
+    DEPENDS murb-bin
+    COMMENT "Running Python benchmark script..."
+)
+
+# Automatically run benchmark after building
+add_dependencies(murb-bin run_benchmark)
+
 if (ENABLE_VECTO)
 
 endif ()
