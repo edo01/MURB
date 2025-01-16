@@ -25,6 +25,7 @@
 #include "implem/simd/SimulationNBodySimdOptim.hpp"
 #include "implem/gpu/SimulationNBodyGPU.hpp"
 #include "implem/simd/SimulationNBodyMipp.hpp"
+#include "implem/simd/SimulationNBodyMippOMP.hpp"
 #include "implem/simd/SimulationNBodyMippV2.hpp"
 #include "implem/barnes_hut/SimulationNBodyBarnesHut.hpp"
 
@@ -91,6 +92,7 @@ void argsReader(int argc, char **argv)
 #endif
                      "\t\t\t - \"gpu\"\n"
                      "\t\t\t - \"mipp\"\n"
+                     "\t\t\t - \"mipp_omp\"\n"
                      "\t\t\t - \"mipp_v2\""
                      "\t\t\t - \"cpu+barnes\"\n"
                      "\t\t\t ----";
@@ -217,6 +219,8 @@ SimulationNBodyInterface *createImplem()
         simu = new SimulationNBodyMippV2(NBodies, BodiesScheme, Softening);
     }else if (ImplTag == "mipp") {
         simu = new SimulationNBodyMipp(NBodies, BodiesScheme, Softening);
+    }else if (ImplTag == "mipp_omp") {
+        simu = new SimulationNBodyMippOMP(NBodies, BodiesScheme, Softening);
     }else if (ImplTag == "cpu+barnes") {
         simu = new SimulationNBodyBarnesHut(NBodies, BodiesScheme, Softening);
     }else {
