@@ -20,6 +20,8 @@ class SimulationNBodyHeterogeneous : public SimulationNBodyInterface {
     int N_y; // grid in the y direction
     int N_x; // grid in the x direction
 
+    virtual void computeOneIterationCPU();
+    
   public:
     SimulationNBodyHeterogeneous(const unsigned long nBodies, const std::string &scheme = "galaxy", const float soft = 0.035f,
                          const unsigned long randInit = 0);
