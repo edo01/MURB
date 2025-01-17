@@ -42,21 +42,20 @@ void test_nbody_mixed_precision(const size_t n, const float soft, const float dt
     }
 }
 
-TEST_CASE("n-body - Simd", "[simd]")
+TEST_CASE("n-body - Mixed_Precision", "[mixed_precision]")
 {
-    SECTION("fp32 - n=13 - i=1 - random") { test_nbody_simd(13, 2e+08, 3600, 1, "random", 1e-3); }
-    SECTION("fp32 - n=13 - i=100 - random") { test_nbody_simd(13, 2e+08, 3600, 100, "random", 5e-3); }
-    SECTION("fp32 - n=16 - i=1 - random") { test_nbody_simd(16, 2e+08, 3600, 1, "random", 1e-3); }
-    SECTION("fp32 - n=128 - i=1 - random") { test_nbody_simd(128, 2e+08, 3600, 1, "random", 1e-3); }
-    SECTION("fp32 - n=2048 - i=1 - random") { test_nbody_simd(2048, 2e+08, 3600, 1, "random", 1e-3); }
-    SECTION("fp32 - n=2049 - i=3 - random") { test_nbody_simd(2049, 2e+08, 3600, 3, "random", 1e-3); }
+    SECTION("fp32 - n=13 - i=1 - random") { test_nbody_mixed_precision(13, 2e+08, 3600, 1, "random", 1e-3); }
+    SECTION("fp32 - n=13 - i=100 - random") { test_nbody_mixed_precision(13, 2e+08, 3600, 100, "random", 5e-3); }
+    SECTION("fp32 - n=16 - i=1 - random") { test_nbody_mixed_precision(16, 2e+08, 3600, 1, "random", 1e-3); }
+    SECTION("fp32 - n=128 - i=1 - random") { test_nbody_mixed_precision(128, 2e+08, 3600, 1, "random", 1e-3); }
+    SECTION("fp32 - n=2048 - i=1 - random") { test_nbody_mixed_precision(2048, 2e+08, 3600, 1, "random", 1e-3); }
+    SECTION("fp32 - n=2049 - i=3 - random") { test_nbody_mixed_precision(2049, 2e+08, 3600, 3, "random", 1e-3); }
 
-    SECTION("fp32 - n=13 - i=1 - galaxy") { test_nbody_simd(13, 2e+08, 3600, 1, "galaxy", 1e-1); }
-    SECTION("fp32 - n=13 - i=30 - galaxy") { test_nbody_simd(13, 2e+08, 3600, 30, "galaxy", 1e-1); }
-    SECTION("fp32 - n=16 - i=1 - galaxy") { test_nbody_simd(16, 2e+08, 3600, 1, "galaxy", 1e-2); }
-    SECTION("fp32 - n=128 - i=1 - galaxy") { test_nbody_simd(128, 2e+08, 3600, 1, "galaxy", 1e-2); }
-    SECTION("fp32 - n=2048 - i=4 - galaxy") { test_nbody_simd(2048, 2e+08, 3600, 4, "galaxy", 1e-1); }
-    SECTION("fp32 - n=2049 - i=3 - galaxy") { test_nbody_simd(2049, 2e+08, 3600, 3, "galaxy", 1e-1); }
+    SECTION("fp32 - n=13 - i=1 - galaxy") { test_nbody_mixed_precision(13, 2e+08, 3600, 1, "galaxy", 1e-1); }
+    SECTION("fp32 - n=13 - i=30 - galaxy") { test_nbody_mixed_precision(13, 2e+08, 3600, 30, "galaxy", 1e-1); }
+    SECTION("fp32 - n=16 - i=1 - galaxy") { test_nbody_mixed_precision(16, 2e+08, 3600, 1, "galaxy", 1e-2); }
+    SECTION("fp32 - n=128 - i=1 - galaxy") { test_nbody_mixed_precision(128, 2e+08, 3600, 1, "galaxy", 1e-2); }
+    SECTION("fp32 - n=2048 - i=4 - galaxy") { test_nbody_mixed_precision(2048, 2e+08, 3600, 4, "galaxy", 1e-1); }
+    SECTION("fp32 - n=2049 - i=3 - galaxy") { test_nbody_mixed_precision(2049, 2e+08, 3600, 3, "galaxy", 1e-1); }
 }
 
-#endif
