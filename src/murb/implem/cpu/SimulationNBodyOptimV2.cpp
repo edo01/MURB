@@ -13,8 +13,9 @@ SimulationNBodyOptimV2::SimulationNBodyOptimV2(const unsigned long nBodies, cons
                                            const unsigned long randInit)
     : SimulationNBodyInterface(nBodies, scheme, soft, randInit)
 {
-    this->flopsPerIte = 20.f * (float)this->getBodies().getN() * (float)this->getBodies().getN();
-    this->accelerations.resize(this->getBodies().getN());
+    //flops = n*(n-1)/2 * 27 + n*3
+    this->flopsPerIte = 27.f * (float)(nBodies * (nBodies-1)/2) + 3.f * nBodies;
+    this->accelerations.resize(nBodies);
 }
 
 void SimulationNBodyOptimV2::initIteration()
@@ -32,13 +33,15 @@ void SimulationNBodyOptimV2::initIteration()
  * - We avoid the use of the square root function by using algebraic manipulation
  * - We avoid to recompute the same value multiple times (softSquared)
  * - We avoid to access the data structure multiple times (qx, qy, qz, m) 
+ * - We use local accumulators for acceleration and avoid to access the data structure multiple times
+ * - We avoid to initialize the accelerations to zero at each iteration
  */
 void SimulationNBodyOptimV2::computeBodiesAcceleration() {
     const std::vector<dataAoS_t<float>> &d = this->getBodies().getDataAoS();
     const unsigned long nBodies = this->getBodies().getN(); 
     const float softSquared = this->soft*this->soft; 
 
-    // flops = n² * 20
+    // flops = n*(n-1)/2 * 27 + n*3
     for (unsigned long iBody = 0; iBody < nBodies; iBody++) {
         float ax = 0.0f, ay = 0.0f, az = 0.0f; // Local accumulators for acceleration
 
@@ -51,31 +54,31 @@ void SimulationNBodyOptimV2::computeBodiesAcceleration() {
         // and we take advantage of the symmetry of the problem using the third Newton's law
         for (unsigned long jBody = iBody+1; jBody < nBodies; jBody++) {
 
-            const float rijx = d[jBody].qx - qx_i;
-            const float rijy = d[jBody].qy - qy_i;
-            const float rijz = d[jBody].qz - qz_i;
+            const float rijx = d[jBody].qx - qx_i; // 1 flops
+            const float rijy = d[jBody].qy - qy_i; // 1 flops
+            const float rijz = d[jBody].qz - qz_i; // 1 flops
 
-            float rijSquared = rijx*rijx + rijy*rijy + rijz*rijz;
-            rijSquared += softSquared;
-            float ai  = this->G/ (rijSquared*std::sqrt(rijSquared));
+            float rijSquared = rijx*rijx + rijy*rijy + rijz*rijz; // 5 flops
+            rijSquared += softSquared; // 1 flops
+            float ai  = this->G / (rijSquared*std::sqrt(rijSquared)); // 4 flops
             float aj = ai;
-            ai = ai * d[jBody].m;
-            aj = aj * m_i;
+            ai = ai * d[jBody].m; // 1 flops
+            aj = aj * m_i; // 1 flops
 
-            ax += ai * rijx;
-            ay += ai * rijy;
-            az += ai * rijz;
+            ax += ai * rijx; // 2 flops
+            ay += ai * rijy; // 2 flops
+            az += ai * rijz; // 2 flops
 
             // we take advantage of the symmetry of the problem using the third Newton's law
-            this->accelerations[jBody].ax -= aj * rijx;
-            this->accelerations[jBody].ay -= aj * rijy;
-            this->accelerations[jBody].az -= aj * rijz;
+            this->accelerations[jBody].ax -= aj * rijx; // 2 flops
+            this->accelerations[jBody].ay -= aj * rijy; // 2 flops
+            this->accelerations[jBody].az -= aj * rijz; // 2 flops
         }
 
         // Store the accumulated accelerations
-        this->accelerations[iBody].ax += ax;
-        this->accelerations[iBody].ay += ay;
-        this->accelerations[iBody].az += az;
+        this->accelerations[iBody].ax += ax; // 1 flops
+        this->accelerations[iBody].ay += ay; // 1 flops
+        this->accelerations[iBody].az += az; // 1 flops
     }
 }
 /**

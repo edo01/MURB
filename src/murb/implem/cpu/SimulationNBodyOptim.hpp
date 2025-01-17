@@ -16,7 +16,6 @@ class SimulationNBodyOptim : public SimulationNBodyInterface {
     virtual void computeOneIteration();
 
   protected:
-    void initIteration();
     void computeBodiesAcceleration();
 };
 

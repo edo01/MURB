@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <cmath>
+#include <memory>
 
 /**
  * Is it really necessary to create a body?????
