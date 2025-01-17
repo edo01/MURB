@@ -24,7 +24,7 @@ calculate_forces_no_border(float* devX, float* devY, float* devZ, float* devM, c
     int j, tile;
     float3 acc = {0.0f, 0.0f, 0.0f}; // acceleration of the body
     int id_i = blockIdx.x * blockDim.x + threadIdx.x; // id of the i-th resident body 
-	
+
 	// load the resident body
     float4 bi = make_float4(devX[id_i], devY[id_i], devZ[id_i], devM[id_i]); // position and mass of the i-th
 
@@ -48,11 +48,13 @@ SimulationNBodyHeterogeneous::SimulationNBodyHeterogeneous(const unsigned long n
 {
     const unsigned long N = this->getBodies().getN();
 
-    this->NTPB = 256;
+    this->NTPB = 128;
     this->N_x = N - (N % this->NTPB); // vertical size of the grid
     this->N_y = N; // horizontal size of the grid
     this->N_res = N % this->NTPB;
-    this->NB = (N + this->NTPB - 1) / this->NTPB;
+    this->NB = N_y / this->NTPB;
+
+    printf("N_x: %lu, N_y: %lu, N_res: %lu, NB: %lu\n", this->N_x, this->N_y, this->N_res, this->NB);
     
 	// allocate memory for the bodies
 	cudaMalloc(&this->d_qx, N_y * sizeof(float));
@@ -73,7 +75,6 @@ SimulationNBodyHeterogeneous::SimulationNBodyHeterogeneous(const unsigned long n
     this->accelerations.ax.resize(this->getBodies().getN());
     this->accelerations.ay.resize(this->getBodies().getN());
     this->accelerations.az.resize(this->getBodies().getN());
-
 }
 
 /**
@@ -90,29 +91,32 @@ void SimulationNBodyHeterogeneous::computeOneIteration()
     std::vector<float> &ay = this->accelerations.ay;
     std::vector<float> &az = this->accelerations.az;
 
-    cudaMemcpy(this->d_qx, d.qx.data(), N_y * sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(this->d_qy, d.qy.data(), N_y * sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(this->d_qz, d.qz.data(), N_y * sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(this->d_m, d.m.data(),   N_y * sizeof(float), cudaMemcpyHostToDevice);
+    if(N < this->NTPB)
+    {
+        computeOneIterationCPU(); 
+    }else{
+        cudaMemcpy(this->d_qx, d.qx.data(), N_y * sizeof(float), cudaMemcpyHostToDevice);
+        cudaMemcpy(this->d_qy, d.qy.data(), N_y * sizeof(float), cudaMemcpyHostToDevice);
+        cudaMemcpy(this->d_qz, d.qz.data(), N_y * sizeof(float), cudaMemcpyHostToDevice);
+        cudaMemcpy(this->d_m,  d.m.data(),  N_y * sizeof(float), cudaMemcpyHostToDevice);
 
-    calculate_forces_no_border<<<NB, NTPB, NTPB * sizeof(float4)>>>(this->d_qx, this->d_qy, this->d_qz, this->d_m, N_y, 
-                                    softSquared, this->G, this->d_ax, this->d_ay, 
-                                    this->d_az, this->NTPB);
+        calculate_forces_no_border<<<NB, NTPB, NTPB * sizeof(float4)>>>(this->d_qx, this->d_qy, this->d_qz, this->d_m, N_y, 
+                                        softSquared, this->G, this->d_ax, this->d_ay, 
+                                        this->d_az, this->NTPB);
 
-    cudaMemcpyAsync(this->p_ax, this->d_ax, N_x * sizeof(float), cudaMemcpyDeviceToHost);
-    cudaMemcpyAsync(this->p_ay, this->d_ay, N_x * sizeof(float), cudaMemcpyDeviceToHost);
-    cudaMemcpyAsync(this->p_az, this->d_az, N_x * sizeof(float), cudaMemcpyDeviceToHost);
+        cudaMemcpyAsync(this->p_ax, this->d_ax, N_x * sizeof(float), cudaMemcpyDeviceToHost);
+        cudaMemcpyAsync(this->p_ay, this->d_ay, N_x * sizeof(float), cudaMemcpyDeviceToHost);
+        cudaMemcpyAsync(this->p_az, this->d_az, N_x * sizeof(float), cudaMemcpyDeviceToHost);
 
-    computeOneIterationCPU();    
+        computeOneIterationCPU();    
 
-    // synchronize cpu and gpu here
-    cudaDeviceSynchronize();
-    
-    // copy the results from the pinned memory to the host memory
-    for (unsigned long i = 0; i < N_x; i++) {
-        ax[i] = p_ax[i];
-        ay[i] = p_ay[i];
-        az[i] = p_az[i];
+        // synchronize cpu and gpu here
+        cudaDeviceSynchronize();
+        
+        // copy the results from the pinned memory to the host memory
+        std::copy(this->p_ax, this->p_ax + N_x, ax.begin());
+        std::copy(this->p_ay, this->p_ay + N_x, ay.begin());
+        std::copy(this->p_az, this->p_az + N_x, az.begin());
     }
 
     // time integration
@@ -123,10 +127,10 @@ void SimulationNBodyHeterogeneous::computeOneIteration()
 SimulationNBodyHeterogeneous::~SimulationNBodyHeterogeneous()
 {
     // free bodies memory
-    cudaFreeHost(this->d_qx);
-    cudaFreeHost(this->d_qy);
-    cudaFreeHost(this->d_qz);
-    cudaFreeHost(this->d_m);
+    cudaFree(this->d_qx);
+    cudaFree(this->d_qy);
+    cudaFree(this->d_qz);
+    cudaFree(this->d_m);
 
     cudaFreeHost(this->d_ax);
     cudaFreeHost(this->d_ay);

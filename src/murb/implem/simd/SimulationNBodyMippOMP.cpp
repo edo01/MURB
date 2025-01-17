@@ -50,13 +50,11 @@ void SimulationNBodyMippOMP::computeBodiesAccelerationPadding()
         const mipp::Reg<float> r_qx_i(qx[iBody]);
         const mipp::Reg<float> r_qy_i(qy[iBody]);
         const mipp::Reg<float> r_qz_i(qz[iBody]);
-        unsigned long jBody;
 
-        for (jBody = 0; jBody < N; jBody+=mipp::N<float>()) {
+        for (unsigned long jBody = 0; jBody < N; jBody+=mipp::N<float>()) {
             mipp::Reg<float> r_rijx = mipp::Reg<float>(&qx[jBody]) - r_qx_i; // 4 flop
             mipp::Reg<float> r_rijy = mipp::Reg<float>(&qy[jBody]) - r_qy_i; // 4 flop
             mipp::Reg<float> r_rijz = mipp::Reg<float>(&qz[jBody]) - r_qz_i; // 4 flop
-
 
             // compute the || rij ||² distance between body i and body j
             mipp::Reg<float> r_rijSquared = r_rijx*r_rijx + r_rijy*r_rijy + r_rijz*r_rijz; // 5 flops // TRY MAC OPERATION 
