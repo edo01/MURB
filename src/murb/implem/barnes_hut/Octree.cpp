@@ -24,14 +24,6 @@ T BoundingBox<T>::getRadius() {
 template <typename T>
 Octree<T>::Octree(BoundingBox<T> boundary):
     empty(true), divided(false), boundary(boundary){
-    northWestUp = nullptr;
-    northWestDown = nullptr;
-    northEastUp = nullptr;
-    northEastDown = nullptr;
-    southWestUp = nullptr;
-    southWestDown = nullptr;
-    southEastUp = nullptr;
-    southEastDown = nullptr;
 }
 
 template <typename T>
@@ -73,14 +65,14 @@ void Octree<T>::subdivide() {
     BoundingBox<T> seu(p, h / 2);
     p = {x + h / 2, y - h / 2, z - h / 2};
     BoundingBox<T> seb(p, h / 2);
-    this->northWestUp = new Octree<T>(nwu);
-    this->northWestDown = new Octree<T>(nwb);
-    this->northEastUp = new Octree<T>(neu);
-    this->northEastDown = new Octree<T>(neb);
-    this->southWestUp = new Octree<T>(swu);
-    this->southWestDown = new Octree<T>(swb);
-    this->southEastUp = new Octree<T>(seu);
-    this->southEastDown = new Octree<T>(seb);
+    this->northWestUp = std::make_unique<Octree<T>>(nwu);
+    this->northWestDown = std::make_unique<Octree<T>>(nwb);
+    this->northEastUp = std::make_unique<Octree<T>>(neu);
+    this->northEastDown = std::make_unique<Octree<T>>(neb);
+    this->southWestUp = std::make_unique<Octree<T>>(swu);
+    this->southWestDown = std::make_unique<Octree<T>>(swb);
+    this->southEastUp = std::make_unique<Octree<T>>(seu);
+    this->southEastDown = std::make_unique<Octree<T>>(seb);
     divided = true;
 }
 

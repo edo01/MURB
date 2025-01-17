@@ -53,8 +53,6 @@ SimulationNBodyHeterogeneous::SimulationNBodyHeterogeneous(const unsigned long n
     this->N_y = N; // horizontal size of the grid
     this->N_res = N % this->NTPB;
     this->NB = N_y / this->NTPB;
-
-    printf("N_x: %lu, N_y: %lu, N_res: %lu, NB: %lu\n", this->N_x, this->N_y, this->N_res, this->NB);
     
 	// allocate memory for the bodies
 	cudaMalloc(&this->d_qx, N_y * sizeof(float));
@@ -93,7 +91,7 @@ void SimulationNBodyHeterogeneous::computeOneIteration()
 
     if(N < this->NTPB)
     {
-        computeOneIterationCPU(); 
+        computeOneIterationCPU(); // if the number of bodies is less than the number of threads per block just use the CPU
     }else{
         cudaMemcpy(this->d_qx, d.qx.data(), N_y * sizeof(float), cudaMemcpyHostToDevice);
         cudaMemcpy(this->d_qy, d.qy.data(), N_y * sizeof(float), cudaMemcpyHostToDevice);

@@ -54,18 +54,18 @@ public:
 
 private:
     // int capacity; // assumed to be 1
-    bool empty; // to check weather the region is full or not
+    bool empty; // to check whether the region is full or not
     bool divided; // to check if the region is divided or not
     CoM<T> com; // center of mass
     BoundingBox<T> boundary; // the boundary of the region
-    Octree<T> *northWestUp;
-    Octree<T> *northEastUp;
-    Octree<T> *southWestUp;
-    Octree<T> *southEastUp;
-    Octree<T> *northWestDown;
-    Octree<T> *northEastDown;
-    Octree<T> *southWestDown;
-    Octree<T> *southEastDown;
-};
+    std::unique_ptr<Octree<T>> northWestUp;
+    std::unique_ptr<Octree<T>> northEastUp;
+    std::unique_ptr<Octree<T>> southWestUp;
+    std::unique_ptr<Octree<T>> southEastUp;
+    std::unique_ptr<Octree<T>> northWestDown;
+    std::unique_ptr<Octree<T>> northEastDown;
+    std::unique_ptr<Octree<T>> southWestDown;
+    std::unique_ptr<Octree<T>> southEastDown;
+};;
 
 #endif // OCTREE_HPP
