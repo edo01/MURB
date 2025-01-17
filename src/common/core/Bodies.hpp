@@ -172,6 +172,18 @@ template <typename T> class Bodies {
      */
     void initRandomly(const unsigned long randInit = 0);
 
+    /*!
+     *  \brief Computes the bounding box of all bodies.
+     *
+     *  This method calculates the minimum and maximum coordinates (x, y, z) 
+     *  of all bodies in the simulation, which can be used to initialize 
+     *  the spatial bounds for the Barnes-Hut tree.
+     *
+     *  \return A tuple containing the minimum and maximum coordinates in the 
+     *          following order: (minX, maxX, minY, maxY, minZ, maxZ).
+     */
+    std::tuple<T, T, T, T, T, T> getBounds() const;
+
   protected:
     /*!
      *  \brief Update the position and the velocity of one body with time integration.
