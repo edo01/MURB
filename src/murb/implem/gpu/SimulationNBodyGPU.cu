@@ -31,16 +31,16 @@
  * in order to take advantage of the coalesced memory access. ????
  */
 __device__ float3
-bodyBodyInteraction(float4 bi, float4 bj, float3 ai)
+bodyBodyInteraction(float4 bi, float4 bj, float3 ai, float G, float eps)
 {
   float3 r;
   r.x = bj.x - bi.x; // 1 FLOP
   r.y = bj.y - bi.y; // 1 FLOP
   r.z = bj.z - bi.z; // 1 FLOP
 
-  float distSqr = r.x * r.x + r.y * r.y + r.z * r.z + EPS2; // 6 FLOPS
+  float distSqr = r.x * r.x + r.y * r.y + r.z * r.z + eps; // 6 FLOPS
 
-  float s = bj.w / distSqr*sqrtf(distSqr); // 3 FLOPS
+  float s = G * bj.w / distSqr*sqrtf(distSqr); // 3 FLOPS
 
   ai.x += r.x * s; // 2 FLOPS
   ai.y += r.y * s; // 2 FLOPS
@@ -53,48 +53,62 @@ bodyBodyInteraction(float4 bi, float4 bj, float3 ai)
 
  */
 __device__ float3
-tile_calculation(float4 bi, float3 ai)
+tile_calculation(float4 bi, float3 ai, float G, float eps)
 {
   int j;
-  extern __shared__ float4[] shPosition;
+  extern __shared__ float4 shPosition[];
   for (j = 0; j < blockDim.x; j++) {
-    ai = bodyBodyInteraction(bi, shPosition[j], ai);
+    ai = bodyBodyInteraction(bi, shPosition[j], ai, G, eps);
   }
   return ai;
 }
 
+
+/**
+ * Here all the computation depends on the size of the tile. In order to work the tile size must be greater than the 
+ * number of threads in the block.
+ */
 __global__ void
 calculate_forces(float* devX, float* devY, float* devZ, float* devM, const unsigned long N, 
-                 const float softSquared, const float G, float* devAx, float* devAy, float* devAz)
+                 const float softSquared, const float G, float* devAx, float* devAy, float* devAz,
+                 const float TILE_SIZE)
 {
-  /* extern __shared__ float4[] shPosition;
-  float4 *globalX = (float4 *)devX;
-  float4 *globalA = (float4 *)devA;
-  float4 bi;
-  int i, tile;
-  float3 acc = {0.0f, 0.0f, 0.0f};
-  int gtid = blockIdx.x * blockDim.x + threadIdx.x;
-  bi = globalX[gtid];
-  for (i = 0, tile = 0; i < N; i += p, tile++) {
-    int idx = tile * blockDim.x + threadIdx.x;
-    shPosition[threadIdx.x] = globalX[idx];
-    __syncthreads();
-    acc = tile_calculation(myPosition, acc);
-    __syncthreads();
-  }
-  // Save the result in global memory for the integration step.
-  float4 acc4 = {acc.x, acc.y, acc.z, 0.0f};
-  globalA[gtid] = acc4; */
+    /* extern __shared__ float4[] shPosition;
+    float4 *globalX = (float4 *)devX;
+    float4 *globalA = (float4 *)devA;
+    float4 bi;
+    int i, tile;
+    float3 acc = {0.0f, 0.0f, 0.0f};
+    int gtid = blockIdx.x * blockDim.x + threadIdx.x;
+    bi = globalX[gtid];
+    for (i = 0, tile = 0; i < N; i += p, tile++) {
+        int idx = tile * blockDim.x + threadIdx.x;
+        shPosition[threadIdx.x] = globalX[idx];
+        __syncthreads();
+        acc = tile_calculation(myPosition, acc);
+        __syncthreads();
+    }
+    // Save the result in global memory for the integration step.
+    float4 acc4 = {acc.x, acc.y, acc.z, 0.0f};
+    globalA[gtid] = acc4; */
 
-  extern __shared__ float4 shPosition[]; // shared memory to store the positions of the bodies
-  int i, tile;
-  float3 acc = {0.0f, 0.0f, 0.0f};
+    extern __shared__ float4 shPosition[]; // shared memory to store the positions of the bodies
+    int i, tile;
+    float3 acc = {0.0f, 0.0f, 0.0f}; // acceleration of the body
+    int id_i = blockIdx.x * blockDim.x + threadIdx.x; // id of the i-th resident body 
+    float4 bi = {devX[id_i], devY[id_i], devZ[id_i], devM[id_i]}; // position and mass of the i-th body
 
-  for (i = 0, tile = 0; i < N; i += p, tile++) {
-    
-  }
-
-
+    for (i = 0, tile = 0; i < N; i += TILE_SIZE, tile++) {
+        int id_j = tile * blockDim.x + threadIdx.x;
+        shPosition[threadIdx.x] = {devX[id_j], devY[id_j], devZ[id_j], devM[id_j]}; // check if this is coalesced
+        __syncthreads(); // wait for all the threads to load the data
+        acc = tile_calculation(bi, acc, G, softSquared);
+        __syncthreads(); // wait before overwriting the shared memory
+    }
+    // save the results in the global memory
+    devAx[id_i] = acc.x;
+    devAy[id_i] = acc.y;
+    devAz[id_i] = acc.z;
 }
 
 //maybe for the cache is better this version
@@ -165,6 +179,7 @@ void SimulationNBodyGPU::computeOneIteration()
     const int NTPB = 32;
     const int NB   = (this->getBodies().getN() + NTPB - 1) / NTPB; 
     const float softSquared =  std::pow(this->soft, 2);
+    constexpr int TILE_SIZE = NTPB;
 
     // compute the positions of the bodies
     const dataSoA_t<float> &d = this->getBodies().getDataSoA();
@@ -173,14 +188,14 @@ void SimulationNBodyGPU::computeOneIteration()
     std::vector<float> &ay = this->accelerations.ay;
     std::vector<float> &az = this->accelerations.az;
 
-    std::copy(d.x.begin(), d.x.end(), this->d_qx);
-    std::copy(d.y.begin(), d.y.end(), this->d_qy);
-    std::copy(d.z.begin(), d.z.end(), this->d_qz);
+    std::copy(d.qx.begin(), d.qx.end(), this->d_qx);
+    std::copy(d.qy.begin(), d.qy.end(), this->d_qy);
+    std::copy(d.qz.begin(), d.qz.end(), this->d_qz);
     std::copy(d.m.begin(), d.m.end(), this->d_m);
 
-
     calculate_forces<<<NTPB, NB>>>(this->d_qx, this->d_qy, this->d_qz, this->d_m, N, 
-                                                    softSquared, this->G, this->d_ax, this->d_ay, this->d_az);
+                                    softSquared, this->G, this->d_ax, this->d_ay, 
+                                    this->d_az, TILE_SIZE);
     cudaDeviceSynchronize();
 
     std::copy(this->d_ax, this->d_ax + N, ax.begin());
@@ -194,5 +209,13 @@ void SimulationNBodyGPU::computeOneIteration()
 // destructor
 SimulationNBodyGPU::~SimulationNBodyGPU()
 {
-    cudaFree(this->d_accelerations);
+    // free bodies memory
+    cudaFree(this->d_qx);
+    cudaFree(this->d_qy);
+    cudaFree(this->d_qz);
+    cudaFree(this->d_m);
+
+    cudaFree(this->d_ax);
+    cudaFree(this->d_ay);
+    cudaFree(this->d_az);
 }

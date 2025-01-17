@@ -9,7 +9,7 @@
 class SimulationNBodyGPU : public SimulationNBodyInterface {
   protected:
     float* d_ax, *d_ay, *d_az; /*!< Acceleration components on the device. */
-    float* d_qx, *d_qy, *d_qz, *d_qm; /*!< Position components on the device. */
+    float* d_qx, *d_qy, *d_qz, *d_m; /*!< Position components on the device. */
 
     accSoA_t<float> accelerations; /*!< Array of body acceleration structures. */
 
