@@ -7,7 +7,7 @@
 #include <vector>
 #include <string>
 
-#include "SimulationNBodyInterface.hpp"
+#include "core/SimulationNBodyInterface.hpp"
 #include "core/BarnesHutTree.hpp"
 #include "SimulationNBodyBarnesHut.hpp"
 
