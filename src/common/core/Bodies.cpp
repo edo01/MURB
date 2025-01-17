@@ -218,6 +218,28 @@ template <typename T> void Bodies<T>::updatePositionsAndVelocities(const std::ve
                                   accelerations[iBody].ay, accelerations[iBody].az, dt);
 }
 
+template <typename T>
+std::tuple<T, T, T, T, T, T> Bodies<T>::getBounds() const {
+    T minX = std::numeric_limits<T>::max();
+    T minY = std::numeric_limits<T>::max();
+    T minZ = std::numeric_limits<T>::max();
+    T maxX = std::numeric_limits<T>::lowest();
+    T maxY = std::numeric_limits<T>::lowest();
+    T maxZ = std::numeric_limits<T>::lowest();
+
+    for (const auto &body : this->dataAoS) {
+        if (body.qx < minX) minX = body.qx;
+        if (body.qy < minY) minY = body.qy;
+        if (body.qz < minZ) minZ = body.qz;
+        if (body.qx > maxX) maxX = body.qx;
+        if (body.qy > maxY) maxY = body.qy;
+        if (body.qz > maxZ) maxZ = body.qz;
+    }
+
+    return std::make_tuple(minX, maxX, minY, maxY, minZ, maxZ);
+}
+
+
 // ==================================================================================== explicit template instantiation
 template class Bodies<double>;
 template class Bodies<float>;
