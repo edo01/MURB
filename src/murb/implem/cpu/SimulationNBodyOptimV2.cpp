@@ -13,6 +13,11 @@
  * - We avoid to access the data structure multiple times (qx, qy, qz, m) 
  * - We use local accumulators for acceleration and avoid to access the data structure multiple times
  * - We avoid to initialize the accelerations to zero at each iteration
+ * 
+ * Please note that reducing the complexity of the algorithm from n² to (n-1)*n/2 comes 
+ * with a cost in terms of cache misses. Also, the algorithm cannot be easily parallelized
+ * because of accumulation of the accelerations. So even if it is may be faster than the
+ * n^2 algorithm, it may not be the best choice for large n and for parallelization.
  */
 
 #include <cassert>
