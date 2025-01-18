@@ -32,7 +32,7 @@ SimulationNBodyMippV2::SimulationNBodyMippV2(const unsigned long nBodies, const 
                                            const unsigned long randInit)
     : SimulationNBodyInterface(nBodies, scheme, soft, randInit)
 {
-    this->flopsPerIte = 27.f * mipp::N<float>() * (float)(nBodies * (nBodies-1)/2) + 15.f * nBodies;
+    this->flopsPerIte = 27.f * (float)(nBodies * (nBodies-1)/2) + 15.f * nBodies;
     this->accelerations.ax.resize(this->getBodies().getN());
     this->accelerations.ay.resize(this->getBodies().getN());
     this->accelerations.az.resize(this->getBodies().getN());

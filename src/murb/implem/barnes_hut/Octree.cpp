@@ -1,3 +1,8 @@
+/**
+ * @file Octree.cpp
+ * @brief Implementation of the Octree data structure.
+ */
+
 #include "Octree.hpp"
 #include <iostream>
 

@@ -1,3 +1,9 @@
+/**
+ * Since nvcc does not support mipp, we need to implement in a separate file the
+ * computeOneIterationCPU function using mipp. This function is equivalent to the
+ * compute one iteration function of the SimulationNBodyMippOMP class, which is the
+ * fastest version of the n^2 algorithm that we can get when using only the CPU.
+ */
 #include "SimulationNBodyHeterogeneous.hpp"
 #include "mipp.h"
 

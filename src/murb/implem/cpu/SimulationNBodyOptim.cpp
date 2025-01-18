@@ -11,6 +11,8 @@
  * - We use local accumulators for acceleration and avoid to access the data structure multiple times
  * - We avoid to initialize the accelerations to zero at each iteration
  * - We use pragma unroll to unroll the inner loop
+ * 
+ * flops = n² * 19
  */
 
 #include <cassert>
@@ -28,7 +30,7 @@ SimulationNBodyOptim::SimulationNBodyOptim(const unsigned long nBodies, const st
                                            const unsigned long randInit)
     : SimulationNBodyInterface(nBodies, scheme, soft, randInit)
 {
-    this->flopsPerIte = 18.f * (float)(nBodies * nBodies);
+    this->flopsPerIte = 19.f * (float)(nBodies * nBodies);
     this->accelerations.resize(this->getBodies().getN());
 }
 
@@ -38,7 +40,7 @@ void SimulationNBodyOptim::computeBodiesAcceleration() {
     const unsigned long nBodies = this->getBodies().getN(); 
     const float softSquared = this->soft*this->soft; 
 
-    // flops = n² * 18 + 3
+    // flops = n² * 19 + 3
     for (unsigned long iBody = 0; iBody < nBodies; iBody++) {
         float ax = 0.0f, ay = 0.0f, az = 0.0f; // Local accumulators for acceleration
 

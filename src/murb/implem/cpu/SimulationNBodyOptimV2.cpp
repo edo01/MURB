@@ -18,6 +18,8 @@
  * with a cost in terms of cache misses. Also, the algorithm cannot be easily parallelized
  * because of accumulation of the accelerations. So even if it is may be faster than the
  * n^2 algorithm, it may not be the best choice for large n and for parallelization.
+ * 
+ * flops = n*(n-1)/2 * 27 + n * 3
  */
 
 #include <cassert>

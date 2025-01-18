@@ -1,3 +1,30 @@
+/**
+ * @file SimulationNBodyGPU.cu
+ * @brief Implementation of the N-Body simulation on the GPU.
+ * 
+ *
+ * The GPU implementation of the N-Body simulation is based on the O(N^2) algorithm.
+ * If we consider that for each body we must compute the acceleration with all the other bodies,
+ * we can see that there is a grid of nBodies x nBodies computations to be done. This grid can be 
+ * divided into tiles of size blockDim x blockDim. Each tile will be computed by a block of threads.
+ * The algorithm is as follows:
+ * - First the positions of blockDim bodies are loaded into the shared memory. These will reside in the
+ *   shared memory of the block and are the bodies for which the acceleration will be computed.
+ * - Then other blockDim bodies are loaded into the shared memory. These bodies are the ones for which the
+ *   acceleration will be computed.
+ * - the result of the computation is accumulated in the shared memory of the block.
+ * - New bodies are loaded into the shared memory and the process is repeated until all the bodies are computed.
+ * - The final result is written into the global memory.
+ * 
+ * Some notes on the implementation:
+ * - We couldn't use pinned memory for the bodies because we do not manage the allocation of the memory.
+ * - A better implementation would be to use the AoS format for the bodies instead of the SoA format.
+ *   This would allow us to load the bodies in a single read operation instead of four. However,
+ *   this would require some additional copy operations before launching the kernel. For a 
+ *   lack of time, we did not implement this.
+ * 
+ */
+
 #include <cassert>
 #include <cmath>
 #include <fstream>
@@ -11,20 +38,7 @@
 #include "SimulationNBodyGPU.hpp"
 #include "commons.cuh"
 
-/**
- * The GPU implementation of the N-Body simulation is based on the O(N^2) algorithm.
- * If we consider that for each body we must compute the acceleration with all the other bodies,
- * we can see that there is a grid of nBodies x nBodies computations to be done. This grid can be 
- * divided into tiles of size blockDim x blockDim. Each tile will be computed by a block of threads.
- * The algorithm is as follows:
- * - First the positions of blockDim bodies are loaded into the shared memory. This will be resided in the
- *   shared memory of the block and are the blocks for which the acceleration will be computed.
- * - Then other blockDim bodies are loaded into the shared memory. These bodies are the ones for which the
- *   acceleration will be computed.
- * - the result of the computation is accumulated in the shared memory of the block.
- * - New bodies are loaded into the shared memory and the process is repeated until all the bodies are computed.
- * - The final result is written into the global memory.
- */
+
 
 /**
  * Here all the computation depends on the size of the tile. In order to work the tile size must be greater than the 

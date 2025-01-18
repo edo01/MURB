@@ -15,6 +15,10 @@
  *   feature of mipp to avoid the reminder of the loop. This version is slower than the padding
  *   version but is interesting to show the masquerade load feature of mipp.
  * 
+ * Please note that the number of flops remains the same as the non-simd version of the algorithm,
+ * since as we increase the number of operations per cycle, we decrease the number of cycles:
+ * 
+ * flops = n² * 19 + 9 * n
  */
 #include <cassert>
 #include <cmath>
@@ -30,7 +34,7 @@ SimulationNBodyMipp::SimulationNBodyMipp(const unsigned long nBodies, const std:
                                            const unsigned long randInit)
     : SimulationNBodyInterface(nBodies, scheme, soft, randInit)
 {
-    this->flopsPerIte = (float)(20 * mipp::N<float>() * nBodies * nBodies + 9 * nBodies);
+    this->flopsPerIte = (float)(19  * nBodies * nBodies + 9 * nBodies);
     this->accelerations.ax.resize(this->getBodies().getN());
     this->accelerations.ay.resize(this->getBodies().getN());
     this->accelerations.az.resize(this->getBodies().getN());
@@ -132,7 +136,7 @@ void SimulationNBodyMipp::computeBodiesAccelerationPadding()
     const mipp::Reg<float> r_softSquared = mipp::Reg<float>(this->soft*this->soft);
     const mipp::Reg<float> r_G = mipp::Reg<float>(this->G);
     
-    // flops = n² * 80 + 9*n (with mipp::N<float>() = 4)
+    // flops = n² * 19 + 9*n
     //#pragma omp parallel for
     for (unsigned long iBody = 0; iBody < N; iBody+=1) {
         // accumulators
@@ -145,6 +149,7 @@ void SimulationNBodyMipp::computeBodiesAccelerationPadding()
         const mipp::Reg<float> r_qz_i(qz[iBody]);
         unsigned long jBody;
 
+        #pragma unroll 4
         for (jBody = 0; jBody < N; jBody+=mipp::N<float>()) {
             mipp::Reg<float> r_rijx = mipp::Reg<float>(&qx[jBody]) - r_qx_i; // VECSIZE flop
             mipp::Reg<float> r_rijy = mipp::Reg<float>(&qy[jBody]) - r_qy_i; // VECSIZE flop
@@ -157,7 +162,7 @@ void SimulationNBodyMipp::computeBodiesAccelerationPadding()
             // compute the acceleration value 
             r_rijSquared += r_softSquared; // VECSIZE flop
             mipp::Reg<float> r_mj(&m[jBody]);
-            mipp::Reg<float> r_ai = r_G * r_mj / (r_rijSquared*mipp::sqrt(r_rijSquared)); // 5*VECSIZE flops
+            mipp::Reg<float> r_ai = r_G * r_mj / (r_rijSquared*mipp::sqrt(r_rijSquared)); // 4*VECSIZE flops
             
             // accumulate the acceleration value
             r_ax += r_ai * r_rijx; r_ay += r_ai * r_rijy; r_az += r_ai * r_rijz; // 6*VECSIZE flops

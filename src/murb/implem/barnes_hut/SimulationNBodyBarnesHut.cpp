@@ -1,3 +1,17 @@
+/**
+ * @file SimulationNBodyBarnesHut.cpp
+ * @brief Optimized implementation of the N-body simulation using the Barnes-Hut algorithm.
+ * 
+ * This version of the algorithm uses the Barnes-Hut algorithm to reduce the complexity of the
+ * n^2 algorithm to n*log(n). The algorithm is implemented using an Octree data structure since 
+ * we are simulating a 3D space. The algorithm is more complex than the n^2 algorithm and the   
+ * flops are difficult to compute, since it depends on the number of bodies and the distribution
+ * of the bodies in the space at each iteration. Unfortunately, the algorithm is not easily
+ * parallelizable and we did not dig into this direction. Moreover, the algorithm does not show
+ * any improvement in terms of performance compared to the n^2 algorithm, for small theta values.
+ * In the latter case, the algorithm reduces to the n^2 algorithm and is even slower.  
+ */
+
 #include "SimulationNBodyBarnesHut.hpp"
 #include <cmath>
 #include <iostream>
@@ -7,7 +21,7 @@ SimulationNBodyBarnesHut::SimulationNBodyBarnesHut(const unsigned long nBodies, 
                                                    const unsigned long randInit)
     : SimulationNBodyInterface(nBodies, scheme, soft, randInit){
         this->accelerations.resize(this->getBodies().getN());
-        this->flopsPerIte = 0.f;
+        this->flopsPerIte = 0.f; // too complex to compute
 
         Point<float> center = {0.0f, 0.0f, 0.0f};
         root = std::make_unique<Octree<float>>(BoundingBox<float>(center, this->range));
