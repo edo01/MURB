@@ -22,7 +22,11 @@
  *   This would allow us to load the bodies in a single read operation instead of four. However,
  *   this would require some additional copy operations before launching the kernel. For a 
  *   lack of time, we did not implement this.
- * 
+ * - The borders of the grid must be handled separately. The right boundary of the grid,
+ *   namely the accumulation of the forces of the bodies for each i-th body, is done by 
+ *   setting the mass of the bodies that are out of the grid to zero. The bottom boundary
+ *   is more tricky. We must avoid the store and load from the global memory, in order to
+ *   avoid illegal memory access.
  */
 
 #include <cassert>

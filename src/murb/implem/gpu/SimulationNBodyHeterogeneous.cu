@@ -1,3 +1,20 @@
+/**
+ * @file SimulationNBodyHeterogeneous.cu
+ * @brief Implementation of the N-Body simulation on the GPU+CPU.
+ * 
+ * This is an heterogeneous implementation of the N-Body simulation. As explained 
+ * in the GPU implementation, the computation space is divided into tiles of size
+ * blockDim x blockDim. Since the size of the tiles are fixed, we have to handle the 
+ * case where the number of bodies is not a multiple of the number of threads per block.
+ * In this case, in order to avoid the divergence of the threads, we can compute the bottom
+ * borders with the CPU (since the right ones causes less divergence). 
+ * 
+ * The CPU_LOAD parameter can increase the number of tiles that will be computed by the CPU.
+ * For example, if CPU_LOAD = 1, the CPU will compute the last row of tiles of the grid and the    
+ * reminder of the computation.
+ * 
+ * For the CPU part, we use the mipp+OMP implementation, which our fastest CPU implementation.
+ */
 #include <cassert>
 #include <cmath>
 #include <fstream>
@@ -11,10 +28,9 @@
 #include "SimulationNBodyHeterogeneous.hpp"
 #include "commons.cuh"
 
-/**
- * Here all the computation depends on the size of the tile. In order to work the tile size must be greater than the 
- * number of threads in the block.
- */
+# define CPU_LOAD 1 // the number of blocks that will be computed by the CPU (+ the reminder of the computation)
+
+
 __global__ void
 calculate_forces_no_border(float* devX, float* devY, float* devZ, float* devM, const unsigned long N, 
                  const float softSquared, const float G, float* devAx, float* devAy, float* devAz,
@@ -49,9 +65,9 @@ SimulationNBodyHeterogeneous::SimulationNBodyHeterogeneous(const unsigned long n
     const unsigned long N = this->getBodies().getN();
 
     this->NTPB = 128;
-    this->N_x = N - (N % this->NTPB); // vertical size of the grid
+    this->N_x = N - (N % this->NTPB) - CPU_LOAD * this->NTPB; // vertical size of the grid
     this->N_y = N; // horizontal size of the grid
-    this->N_res = N % this->NTPB;
+    this->N_res = N % this->NTPB + CPU_LOAD * this->NTPB; // number of bodies that will be computed by the CPU
     this->NB = N_y / this->NTPB;
     
 	// allocate memory for the bodies

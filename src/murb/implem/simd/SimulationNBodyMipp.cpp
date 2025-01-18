@@ -155,7 +155,6 @@ void SimulationNBodyMipp::computeBodiesAccelerationPadding()
             mipp::Reg<float> r_rijy = mipp::Reg<float>(&qy[jBody]) - r_qy_i; // VECSIZE flop
             mipp::Reg<float> r_rijz = mipp::Reg<float>(&qz[jBody]) - r_qz_i; // VECSIZE flop
 
-
             // compute the || rij ||² distance between body i and body j
             mipp::Reg<float> r_rijSquared = r_rijx*r_rijx + r_rijy*r_rijy + r_rijz*r_rijz; // 5*VECSIZE flops
             
