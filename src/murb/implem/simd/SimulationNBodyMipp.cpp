@@ -1,3 +1,20 @@
+/**
+ * @file SimulationNBodyMipp.cpp
+ * @brief Optimized implementation of the N-body simulation using mipp.
+ * 
+ * The code is optimized using transformations of the original code and mipp library. 
+ * We implement three versions of the algorithm:
+ * - The first version "SimulationNBodyMipp::SimulationNBodyMipp" is the safe and correct version
+ *   that doesn't assume any padding in the data structure. It inserts a reminder of the loop at
+ *   the end of the loop.
+ * - The second version "SimulationNBodyMipp::SimulationNBodyMippPadding" assumes that the data
+ *   structure is padded and avoids the reminder of the loop. This is the fastest version and 
+ *   the one that should be used in practice since the padding is already inserted in the data
+ * - The third version "SimulationNBodyMipp::SimulationNBodyMippMasq" uses the masquerade load
+ *   feature of mipp to avoid the reminder of the loop. This version is slower than the padding
+ *   version but is interesting to show the masquerade load feature of mipp.
+ *  
+ */
 #include <cassert>
 #include <cmath>
 #include <fstream>
@@ -8,11 +25,13 @@
 #include "SimulationNBodyMipp.hpp"
 #include "mipp.h"
 
+
+
 SimulationNBodyMipp::SimulationNBodyMipp(const unsigned long nBodies, const std::string &scheme, const float soft,
                                            const unsigned long randInit)
     : SimulationNBodyInterface(nBodies, scheme, soft, randInit)
 {
-    this->flopsPerIte = 20.f * (float)this->getBodies().getN() * (float)this->getBodies().getN();
+    this->flopsPerIte = (float)(20 * nBodies * nBodies + 9 * nBodies);
     this->accelerations.ax.resize(this->getBodies().getN());
     this->accelerations.ay.resize(this->getBodies().getN());
     this->accelerations.az.resize(this->getBodies().getN());
@@ -63,26 +82,26 @@ void SimulationNBodyMipp::computeBodiesAcceleration()
         unsigned long jBody;
 
         for (jBody = 0; jBody < N - mipp::N<float>(); jBody+=mipp::N<float>()) {
-            mipp::Reg<float> r_rijx = mipp::Reg<float>(&qx[jBody]) - r_qx_i; // 4 flop
-            mipp::Reg<float> r_rijy = mipp::Reg<float>(&qy[jBody]) - r_qy_i; // 4 flop
-            mipp::Reg<float> r_rijz = mipp::Reg<float>(&qz[jBody]) - r_qz_i; // 4 flop
+            mipp::Reg<float> r_rijx = mipp::Reg<float>(&qx[jBody]) - r_qx_i; // 1 VECSIZE flops
+            mipp::Reg<float> r_rijy = mipp::Reg<float>(&qy[jBody]) - r_qy_i; // 1 VECSIZE flops
+            mipp::Reg<float> r_rijz = mipp::Reg<float>(&qz[jBody]) - r_qz_i; // 1 VECSIZE flops
 
 
             // compute the || rij ||² distance between body i and body j
-            mipp::Reg<float> r_rijSquared = r_rijx*r_rijx + r_rijy*r_rijy + r_rijz*r_rijz; // 5 flops // TRY MAC OPERATION 
+            mipp::Reg<float> r_rijSquared = r_rijx*r_rijx + r_rijy*r_rijy + r_rijz*r_rijz; // 5 VECSIZE flops
             
             // compute the acceleration value 
-            r_rijSquared += r_softSquared;
-            mipp::Reg<float> r_mj(&m[jBody]);
-            mipp::Reg<float> r_ai = r_G * r_mj / (r_rijSquared*mipp::sqrt(r_rijSquared)); // 5 flops // TRY WITH RSQRT OPERATION
+            r_rijSquared += r_softSquared; // 1 VECSIZE flops
+            mipp::Reg<float> r_mj(&m[jBody]); 
+            mipp::Reg<float> r_ai = r_G * r_mj / (r_rijSquared*mipp::sqrt(r_rijSquared)); // 5 VECSIZE flops
             
             // accumulate the acceleration value
-            r_ax += r_ai * r_rijx; r_ay += r_ai * r_rijy; r_az += r_ai * r_rijz;
+            r_ax += r_ai * r_rijx; r_ay += r_ai * r_rijy; r_az += r_ai * r_rijz; // 6 VECSIZE flops
         } 
 
-        ax[iBody] = mipp::sum(r_ax);
-        ay[iBody] = mipp::sum(r_ay);
-        az[iBody] = mipp::sum(r_az);
+        ax[iBody] = mipp::sum(r_ax); // 3 flops
+        ay[iBody] = mipp::sum(r_ay); // 3 flops
+        az[iBody] = mipp::sum(r_az); // 3 flops
 
         // reminder of the loop
         for(unsigned long j = jBody; j < N; j++){
@@ -125,7 +144,7 @@ void SimulationNBodyMipp::computeBodiesAccelerationPadding()
     const mipp::Reg<float> r_softSquared = mipp::Reg<float>(this->soft*this->soft);
     const mipp::Reg<float> r_G = mipp::Reg<float>(this->G);
     
-    // flops = n² * 20
+    // flops = n² * 86 + 9*n
     //#pragma omp parallel for
     for (unsigned long iBody = 0; iBody < N; iBody+=1) {
         // accumulators
@@ -139,31 +158,31 @@ void SimulationNBodyMipp::computeBodiesAccelerationPadding()
         unsigned long jBody;
 
         for (jBody = 0; jBody < N; jBody+=mipp::N<float>()) {
-            mipp::Reg<float> r_rijx = mipp::Reg<float>(&qx[jBody]) - r_qx_i; // 4 flop
-            mipp::Reg<float> r_rijy = mipp::Reg<float>(&qy[jBody]) - r_qy_i; // 4 flop
-            mipp::Reg<float> r_rijz = mipp::Reg<float>(&qz[jBody]) - r_qz_i; // 4 flop
+            mipp::Reg<float> r_rijx = mipp::Reg<float>(&qx[jBody]) - r_qx_i; // VECSIZE flop
+            mipp::Reg<float> r_rijy = mipp::Reg<float>(&qy[jBody]) - r_qy_i; // VECSIZE flop
+            mipp::Reg<float> r_rijz = mipp::Reg<float>(&qz[jBody]) - r_qz_i; // VECSIZE flop
 
 
             // compute the || rij ||² distance between body i and body j
-            mipp::Reg<float> r_rijSquared = r_rijx*r_rijx + r_rijy*r_rijy + r_rijz*r_rijz; // 5 flops // TRY MAC OPERATION 
+            mipp::Reg<float> r_rijSquared = r_rijx*r_rijx + r_rijy*r_rijy + r_rijz*r_rijz; // 5*VECSIZE flops
             
             // compute the acceleration value 
-            r_rijSquared += r_softSquared;
+            r_rijSquared += r_softSquared; // VECSIZE flop
             mipp::Reg<float> r_mj(&m[jBody]);
-            mipp::Reg<float> r_ai = r_G * r_mj / (r_rijSquared*mipp::sqrt(r_rijSquared)); // 5 flops // TRY WITH RSQRT OPERATION
+            mipp::Reg<float> r_ai = r_G * r_mj / (r_rijSquared*mipp::sqrt(r_rijSquared)); // 5*VECSIZE flops
             
             // accumulate the acceleration value
-            r_ax += r_ai * r_rijx; r_ay += r_ai * r_rijy; r_az += r_ai * r_rijz;
+            r_ax += r_ai * r_rijx; r_ay += r_ai * r_rijy; r_az += r_ai * r_rijz; // 6*VECSIZE flops
         } 
 
-        ax[iBody] = mipp::sum(r_ax);
-        ay[iBody] = mipp::sum(r_ay);
-        az[iBody] = mipp::sum(r_az);
+        ax[iBody] = mipp::sum(r_ax); // 3 flops
+        ay[iBody] = mipp::sum(r_ay); // 3 flops
+        az[iBody] = mipp::sum(r_az); // 3 flops
     }
 }
 
 /**
- * Every iteration a masq is added 
+ * Every iteration a masq is added (slower than the padding version)
  */
 void SimulationNBodyMipp::computeBodiesAccelerationMasq(){
     const dataSoA_t<float> &d = this->getBodies().getDataSoA();

@@ -1,3 +1,18 @@
+/**
+ * @file SimulationNBodyOptim.cpp
+ * @brief Optimized implementation of the N-body simulation. 
+ * 
+ * The code is optimized using transformations of the original code. The algorithm is the
+ * same as the one in SimulationNBodyNaive.cpp.
+ *  
+ * - We avoid the use of the square root function by using algebraic manipulation
+ * - We avoid to recompute the same value multiple times (softSquared)
+ * - We avoid to access the data structure multiple times (qx, qy, qz, m)
+ * - We use local accumulators for acceleration and avoid to access the data structure multiple times
+ * - We avoid to initialize the accelerations to zero at each iteration
+ * - We use pragma unroll to unroll the inner loop
+ */
+
 #include <cassert>
 #include <cmath>
 #include <fstream>
@@ -17,14 +32,6 @@ SimulationNBodyOptim::SimulationNBodyOptim(const unsigned long nBodies, const st
     this->accelerations.resize(this->getBodies().getN());
 }
 
-/**
- * Optimization made:
- * - We avoid the use of the square root function by using algebraic manipulation
- * - We avoid to recompute the same value multiple times (softSquared)
- * - We avoid to access the data structure multiple times (qx, qy, qz, m)
- * - We use local accumulators for acceleration and avoid to access the data structure multiple times
- * - We avoid to initialize the accelerations to zero at each iteration
- */
 void SimulationNBodyOptim::computeBodiesAcceleration() {
 
     const std::vector<dataAoS_t<float>> &d = this->getBodies().getDataAoS();
@@ -39,7 +46,8 @@ void SimulationNBodyOptim::computeBodiesAcceleration() {
         const float qx_i = d[iBody].qx;
         const float qy_i = d[iBody].qy;
         const float qz_i = d[iBody].qz;
-
+        
+        #pragma unroll 4
         for (unsigned long jBody = 0; jBody < nBodies; jBody ++) {
             const float rijx = d[jBody].qx - qx_i; // 1 flops
             const float rijy = d[jBody].qy - qy_i; // 1 flops

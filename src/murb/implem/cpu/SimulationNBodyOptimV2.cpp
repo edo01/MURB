@@ -1,3 +1,20 @@
+/**
+ * @file SimulationNBodyOptimV2.cpp
+ * @brief Optimized implementation of the N-body simulation.
+ *
+ * 
+ * Here we combine both the transformations carried in Optim and an improved version of the 
+ * algorithm that takes advantage of the symmetry of the problem using the third Newton's law.
+ * 
+ * - We reduce the complexity of the algorithm from n² to (n-1)*n/2 leverage the symmetry of 
+ *   the problem.
+ * - We avoid the use of the square root function by using algebraic manipulation
+ * - We avoid to recompute the same value multiple times (softSquared)
+ * - We avoid to access the data structure multiple times (qx, qy, qz, m) 
+ * - We use local accumulators for acceleration and avoid to access the data structure multiple times
+ * - We avoid to initialize the accelerations to zero at each iteration
+ */
+
 #include <cassert>
 #include <cmath>
 #include <fstream>
@@ -27,15 +44,7 @@ void SimulationNBodyOptimV2::initIteration()
     }
 }
 
-/**
- * Optimization made:
- * - We reduce the complexity of the algorithm from O(n²) to O(n²/2) by taking advantage of the symmetry of the problem using the third Newton's law
- * - We avoid the use of the square root function by using algebraic manipulation
- * - We avoid to recompute the same value multiple times (softSquared)
- * - We avoid to access the data structure multiple times (qx, qy, qz, m) 
- * - We use local accumulators for acceleration and avoid to access the data structure multiple times
- * - We avoid to initialize the accelerations to zero at each iteration
- */
+
 void SimulationNBodyOptimV2::computeBodiesAcceleration() {
     const std::vector<dataAoS_t<float>> &d = this->getBodies().getDataAoS();
     const unsigned long nBodies = this->getBodies().getN(); 
@@ -81,10 +90,6 @@ void SimulationNBodyOptimV2::computeBodiesAcceleration() {
         this->accelerations[iBody].az += az; // 1 flops
     }
 }
-/**
- * 
- * @TODO: TRY AOS
- */
 
 void SimulationNBodyOptimV2::computeOneIteration()
 {
