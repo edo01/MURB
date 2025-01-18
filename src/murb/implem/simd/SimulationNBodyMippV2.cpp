@@ -1,3 +1,22 @@
+/**
+ * @file SimulationNBodyMippV2.cpp
+ * @brief Optimized implementation of the N-body simulation using mipp.
+ * 
+ * The triangular version of the algorithm is optimized using mipp library.
+ * Here we have to use the reminder of the loop to compute the remaining bodies, since
+ * the padding is not enough to avoid the reminder of the loop.
+ * 
+ * As in the mipp version, we implement two versions of the algorithm:
+ * - The first version "SimulationNBodyMippV2::computeBodiesAcceleration" is the safe and
+ *  correct version that doesn't assume any padding in the data structure. It inserts a
+ * reminder of the loop at the end of the loop.
+ * - The second version "SimulationNBodyMippV2::computeBodiesAccelerationMasq" uses the
+ * masquerade load feature of mipp to avoid the reminder of the loop. This version is slower
+ * than the padding version but is interesting to show the masquerade load feature of mipp.
+ * 
+ * As we noticed in the previous version, this version of the algorithm may be faster than
+ * the n^2 algorithm but may not be the best choice for large n and for parallelization.
+ */
 #include <cassert>
 #include <cmath>
 #include <fstream>
@@ -8,11 +27,12 @@
 #include "SimulationNBodyMippV2.hpp"
 #include "mipp.h"
 
+
 SimulationNBodyMippV2::SimulationNBodyMippV2(const unsigned long nBodies, const std::string &scheme, const float soft,
                                            const unsigned long randInit)
     : SimulationNBodyInterface(nBodies, scheme, soft, randInit)
 {
-    this->flopsPerIte = 20.f * (float)this->getBodies().getN() * (float)this->getBodies().getN();
+    this->flopsPerIte = 27.f * mipp::N<float>() * (float)(nBodies * (nBodies-1)/2) + 15.f * nBodies;
     this->accelerations.ax.resize(this->getBodies().getN());
     this->accelerations.ay.resize(this->getBodies().getN());
     this->accelerations.az.resize(this->getBodies().getN());
@@ -20,7 +40,6 @@ SimulationNBodyMippV2::SimulationNBodyMippV2(const unsigned long nBodies, const 
 
 void SimulationNBodyMippV2::initIteration()
 {   
-    // memset to zero maybe is faster??
     for (unsigned long iBody = 0; iBody < this->getBodies().getN(); iBody++) {
         this->accelerations.ax[iBody] = 0.f;
         this->accelerations.ay[iBody] = 0.f;
@@ -50,7 +69,7 @@ void SimulationNBodyMippV2::computeBodiesAcceleration()
 
     const float softSquared = this->soft*this->soft;
 
-    // flops = n² * 20
+    // flops = n*(n-1)/2 * 26
     for (unsigned long iBody = 0; iBody < N; iBody++) {
         // accumulators
         mipp::Reg<float> r_ax_i(0.f);
@@ -65,32 +84,30 @@ void SimulationNBodyMippV2::computeBodiesAcceleration()
         const mipp::Reg<float> r_m_i(m[iBody]);  
 
         for (jBody = iBody+1; jBody < N-mipp::N<float>(); jBody+=mipp::N<float>()) {
-            mipp::Reg<float> r_rijx = mipp::Reg<float>(&qx[jBody]) - r_qx_i; // 1 flop
-            mipp::Reg<float> r_rijy = mipp::Reg<float>(&qy[jBody]) - r_qy_i; // 1 flop
-            mipp::Reg<float> r_rijz = mipp::Reg<float>(&qz[jBody]) - r_qz_i; // 1 flop
+            mipp::Reg<float> r_rijx = mipp::Reg<float>(&qx[jBody]) - r_qx_i; // VECSIZE flop
+            mipp::Reg<float> r_rijy = mipp::Reg<float>(&qy[jBody]) - r_qy_i; // VECSIZE flop
+            mipp::Reg<float> r_rijz = mipp::Reg<float>(&qz[jBody]) - r_qz_i; // VECSIZE flop
 
 
             // compute the || rij ||² distance between body i and body j for multiple bodies j
-            mipp::Reg<float> r_rijSquared = r_rijx*r_rijx + r_rijy*r_rijy + r_rijz*r_rijz; // 5 flops // TRY MAC OPERATION 
+            mipp::Reg<float> r_rijSquared = r_rijx*r_rijx + r_rijy*r_rijy + r_rijz*r_rijz; // 5 VECSIZE flops
             
-            // compute the acceleration value between body i and body j: || ai || = G.mj / (|| rij ||² + e²)^{3/2}
-            r_rijSquared += r_softSquared;
-            mipp::Reg<float> r_ai = r_G / (r_rijSquared*mipp::sqrt(r_rijSquared)); // 5 flops // TRY WITH RSQRT OPERATION
-            mipp::Reg<float> r_aj(r_ai* r_m_i);
-            r_ai = r_ai * mipp::Reg<float>(&m[jBody]); 
+            r_rijSquared += r_softSquared; // VECSIZE flop
+            mipp::Reg<float> r_ai = r_G / (r_rijSquared*mipp::sqrt(r_rijSquared)); // 4 VECSIZE flops 
+            mipp::Reg<float> r_aj(r_ai* r_m_i); // 1 VECSIZE flops
+            r_ai = r_ai * mipp::Reg<float>(&m[jBody]);  // 1 VECSIZE flops
 
-            // add the acceleration value into the acceleration vector: ai += || ai ||.rij
-            r_ax_i += r_ai * r_rijx; 
-            r_ay_i += r_ai * r_rijy; 
-            r_az_i += r_ai * r_rijz;
+            r_ax_i += r_ai * r_rijx; // 2 VECSIZE flops
+            r_ay_i += r_ai * r_rijy; // 2 VECSIZE flops
+            r_az_i += r_ai * r_rijz; // 2 VECSIZE flops
 
             mipp::Reg<float> r_ax_j(&ax[jBody]);
             mipp::Reg<float> r_ay_j(&ay[jBody]);
             mipp::Reg<float> r_az_j(&az[jBody]);
 
-            r_ax_j -= r_aj * r_rijx;
-            r_ay_j -= r_aj * r_rijy;
-            r_az_j -= r_aj * r_rijz;
+            r_ax_j -= r_aj * r_rijx; // 2 VECSIZE flops
+            r_ay_j -= r_aj * r_rijy; // 2 VECSIZE flops
+            r_az_j -= r_aj * r_rijz; // 2 VECSIZE flops
 
             r_ax_j.store(&ax[jBody]);
             r_ay_j.store(&ay[jBody]);
@@ -98,6 +115,8 @@ void SimulationNBodyMippV2::computeBodiesAcceleration()
 
         }
 
+        // in the computation of the flops, the reminder of the loop is not taken into account
+        // because is computed in the previous loop
         for(unsigned long j = jBody; j < N; j++){
             const float rijx = qx[j] - qx[iBody];
             const float rijy = qy[j] - qy[iBody];
@@ -118,9 +137,9 @@ void SimulationNBodyMippV2::computeBodiesAcceleration()
             az[j] -= aj * rijz;
         }
 
-        ax[iBody] += mipp::sum(r_ax_i) + ax_i;
-        ay[iBody] += mipp::sum(r_ay_i) + ay_i;
-        az[iBody] += mipp::sum(r_az_i) + az_i;
+        ax[iBody] += mipp::sum(r_ax_i) + ax_i; // 5 flops
+        ay[iBody] += mipp::sum(r_ay_i) + ay_i; // 5 flops
+        az[iBody] += mipp::sum(r_az_i) + az_i; // 5 flops
     }
 }
 
@@ -216,7 +235,6 @@ void SimulationNBodyMippV2::computeBodiesAccelerationMasq(){
     }
 
 }
-
 
 
 void SimulationNBodyMippV2::computeOneIteration()

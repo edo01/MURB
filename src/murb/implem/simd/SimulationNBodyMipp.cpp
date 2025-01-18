@@ -2,7 +2,8 @@
  * @file SimulationNBodyMipp.cpp
  * @brief Optimized implementation of the N-body simulation using mipp.
  * 
- * The code is optimized using transformations of the original code and mipp library. 
+ * The code is optimized using transformations of the original code and mipp library. The algorithm used 
+ * is the n^2 algorithm.
  * We implement three versions of the algorithm:
  * - The first version "SimulationNBodyMipp::SimulationNBodyMipp" is the safe and correct version
  *   that doesn't assume any padding in the data structure. It inserts a reminder of the loop at
@@ -13,7 +14,7 @@
  * - The third version "SimulationNBodyMipp::SimulationNBodyMippMasq" uses the masquerade load
  *   feature of mipp to avoid the reminder of the loop. This version is slower than the padding
  *   version but is interesting to show the masquerade load feature of mipp.
- *  
+ * 
  */
 #include <cassert>
 #include <cmath>
@@ -25,24 +26,16 @@
 #include "SimulationNBodyMipp.hpp"
 #include "mipp.h"
 
-
-
 SimulationNBodyMipp::SimulationNBodyMipp(const unsigned long nBodies, const std::string &scheme, const float soft,
                                            const unsigned long randInit)
     : SimulationNBodyInterface(nBodies, scheme, soft, randInit)
 {
-    this->flopsPerIte = (float)(20 * nBodies * nBodies + 9 * nBodies);
+    this->flopsPerIte = (float)(20 * mipp::N<float>() * nBodies * nBodies + 9 * nBodies);
     this->accelerations.ax.resize(this->getBodies().getN());
     this->accelerations.ay.resize(this->getBodies().getN());
     this->accelerations.az.resize(this->getBodies().getN());
 }
 
-/**
- * Feature of this version:
- * - n^2 algorithm
- * - mipp
- * - reminder of the loop handled separately
- */
 void SimulationNBodyMipp::computeBodiesAcceleration()
 {
     const dataSoA_t<float> &d = this->getBodies().getDataSoA();
@@ -121,11 +114,6 @@ void SimulationNBodyMipp::computeBodiesAcceleration()
     }
 }
 
-
-/**
- * - Here we leverage the already inserted padding in the data structure to avoid the reminder of 
- * the loop.
- */
 void SimulationNBodyMipp::computeBodiesAccelerationPadding()
 {
     const dataSoA_t<float> &d = this->getBodies().getDataSoA();
@@ -144,7 +132,7 @@ void SimulationNBodyMipp::computeBodiesAccelerationPadding()
     const mipp::Reg<float> r_softSquared = mipp::Reg<float>(this->soft*this->soft);
     const mipp::Reg<float> r_G = mipp::Reg<float>(this->G);
     
-    // flops = n² * 86 + 9*n
+    // flops = n² * 80 + 9*n (with mipp::N<float>() = 4)
     //#pragma omp parallel for
     for (unsigned long iBody = 0; iBody < N; iBody+=1) {
         // accumulators
@@ -181,9 +169,6 @@ void SimulationNBodyMipp::computeBodiesAccelerationPadding()
     }
 }
 
-/**
- * Every iteration a masq is added (slower than the padding version)
- */
 void SimulationNBodyMipp::computeBodiesAccelerationMasq(){
     const dataSoA_t<float> &d = this->getBodies().getDataSoA();
     const unsigned long N = this->getBodies().getN();
