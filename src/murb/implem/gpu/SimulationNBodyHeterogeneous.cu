@@ -28,7 +28,7 @@
 #include "SimulationNBodyHeterogeneous.hpp"
 #include "commons.cuh"
 
-# define CPU_LOAD 1 // the number of blocks that will be computed by the CPU (+ the reminder of the computation)
+#define CPU_LOAD 5 // the number of blocks that will be computed by the CPU (+ the reminder of the computation)
 
 
 __global__ void
@@ -65,11 +65,16 @@ SimulationNBodyHeterogeneous::SimulationNBodyHeterogeneous(const unsigned long n
     const unsigned long N = this->getBodies().getN();
 
     this->NTPB = 128;
-    this->N_x = N - (N % this->NTPB) - CPU_LOAD * this->NTPB; // vertical size of the grid
+    this->N_x = N - (N % this->NTPB);// - CPU_LOAD * this->NTPB; // vertical size of the grid
+    this->N_res = N % this->NTPB; // number of bodies that will be computed by the CPU
+    if(N_x!=0 && N_x>CPU_LOAD * this->NTPB)
+    {
+        this->N_x -= CPU_LOAD * this->NTPB; // vertical size of the grid
+        this->N_res += CPU_LOAD * this->NTPB;
+    }
     this->N_y = N; // horizontal size of the grid
-    this->N_res = N % this->NTPB + CPU_LOAD * this->NTPB; // number of bodies that will be computed by the CPU
-    this->NB = N_y / this->NTPB;
-    
+    this->NB = N_x / this->NTPB;
+
 	// allocate memory for the bodies
 	cudaMalloc(&this->d_qx, N_y * sizeof(float));
 	cudaMalloc(&this->d_qy, N_y * sizeof(float));
