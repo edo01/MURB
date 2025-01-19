@@ -21,8 +21,6 @@
 #include "implem/SimulationNBodyNaive.hpp"
 #include "implem/cpu/SimulationNBodyOptim.hpp"
 #include "implem/cpu/SimulationNBodyOptimV2.hpp"
-#include "implem/simd/SimulationNBodySimd.hpp"
-#include "implem/simd/SimulationNBodySimdOptim.hpp"
 #include "implem/gpu/SimulationNBodyGPU.hpp"
 #include "implem/gpu/SimulationNBodyHeterogeneous.hpp"
 #include "implem/simd/SimulationNBodyMipp.hpp"
@@ -87,10 +85,6 @@ void argsReader(int argc, char **argv)
                      "\t\t\t - \"cpu+naive\"\n"
                      "\t\t\t - \"optim\"\n"
                      "\t\t\t - \"optim_v2\"\n"
-#if defined(ENABLE_VECTO) && (defined(__ARM_NEON__) || defined(__ARM_NEON))
-                     "\t\t\t - \"simd\"\n"
-                     "\t\t\t - \"simd_optim\"\n"
-#endif
                      "\t\t\t - \"gpu\"\n"
                      "\t\t\t - \"gpu+cpu\"\n"
                      "\t\t\t - \"mipp\"\n"
@@ -209,12 +203,6 @@ SimulationNBodyInterface *createImplem()
         simu = new SimulationNBodyOptim(NBodies, BodiesScheme, Softening);
     }else if (ImplTag == "optim_v2") {
         simu = new SimulationNBodyOptimV2(NBodies, BodiesScheme, Softening);
-#if defined(ENABLE_VECTO) && (defined(__ARM_NEON__) || defined(__ARM_NEON))
-    }else if (ImplTag == "simd") {
-        simu = new SimulationNBodySimd(NBodies, BodiesScheme, Softening);
-    }else if (ImplTag == "simd_optim") {
-        simu = new SimulationNBodySimdOptim(NBodies, BodiesScheme, Softening);
-#endif
     }else if (ImplTag == "gpu") {
         simu = new SimulationNBodyGPU(NBodies, BodiesScheme, Softening);
     }else if (ImplTag == "gpu+cpu") {
