@@ -11,7 +11,7 @@ class SimulationNBodyBarnesHut : public SimulationNBodyInterface {
   protected:
     std::vector<accAoS_t<float>> accelerations; /*!< Array of body acceleration structures. */
     std::unique_ptr<Octree<float>> root;
-    const float theta = 0.5; /* Distance threshold for Barnes-Hut approximation. */
+    const float theta = 0.1; /* Distance threshold for Barnes-Hut approximation. */
     const float range = 1e13; /* Default range for the simulation space. */
     
   public:

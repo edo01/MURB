@@ -1,0 +1,91 @@
+Peak Performance:
+- CORTEX single precision: 2.04 GHz x 12 instructions per cycle x 4 cores = 97.92 GFlops/s
+- CORTEX double precision: 2.04 GHz x 6 instructions per cycle x 4 cores = 48.96 GFlops/s
+
+- DENVER single precision: 2.04 GHz x 8 instructions per cycle x 2 cores = 32.64 GFlops/s
+- DENVER double precision: 2.04 GHz x 4 instructions per cycle x 2 cores = 16.32 GFlops/s
+
+# CORTEX A-57
+L1 data :  32 KB x 4
+L2      :  2048 KB 
+
+################ SINGLE-CORE EXECUTION
+work to do number 1) Bandwidth estimation through micro-benchmark: 
+ - Total L1D cache 32 KB
+ - Total L2 cache 2048 KB
+ - 1 cores (OMP_NUM_THREADS=1 taskset -c 0 ./bin/bandwidth -M 2GiB -C > bandwidth_output_cortex.csv)
+ - f32 type
+
+L1 triad average bandwidth: 28.34 GB/s
+
+L2 triad average bandwidth: 20.4 GB/s
+
+RAM triad average bandwidth: 8.47 GB/s
+
+################# MULTI-CORE EXECUTION
+work to do number 2) Bandwidth estimation through micro-benchmark: 
+ - Total L1D cache 128 KB
+ - Total L2 cache 2048 KB
+ - 4 cores (OMP_NUM_THREADS=4 taskset -c 0,3,4,5 ./bin/bandwidth -M 2GiB -C > bandwidth_output_cortex_full.csv)
+ - f32 type
+
+L1 triad average bandwidth:  106 GB/s 
+
+L2 triad average bandwidth: 69.3 GB/s
+
+RAM triad average bandwidth: 9.92 GB/s
+
+#######################################################################
+# DENVER-2
+L1 data :  64 KB x2
+L2      :  2048 KB 
+
+#################### SINGLE-CORE EXECUTION
+work to do number 1) Bandwidth estimation through micro-benchmark: 
+ - Total L1D cache 64 KB
+ - Total L2 cache 2048 KB
+ - 1 cores (OMP_NUM_THREADS=1 taskset -c 1 ./bin/bandwidth -M 2GiB -C > bandwidth_output_denver.csv)
+ - f32 type
+
+L1 triad average bandwidth: 44.3 GB/s
+
+L2 triad average bandwidth: 26 GB/s
+
+RAM triad average bandwidth: 16.5 GB/s
+
+###################à MULTI-CORE EXECUTION
+work to do number 2) Bandwidth estimation through micro-benchmark: 
+ - Total L1D cache 128 KB
+ - Total L2 cache 2048 KB
+ - 4 cores (OMP_NUM_THREADS=2 taskset -c 1,2 ./bin/bandwidth -M 2GiB -C > bandwidth_output_denver_full.csv)
+ - f32 type
+
+L1 triad average bandwidth: 87.7 GB/s
+
+L2 triad average bandwidth: 51.30 GB/s
+
+RAM triad average bandwidth: 20.7 GB/s
+
+####################################################
+# FULL SYSTEM
+work to do number 3) Bandwidth estimation through micro-benchmark: 
+    - 6 cores (OMP_NUM_THREADS=6 taskset -c 0,1,2,3,4,5 ./bin/bandwidth -M 2GiB -C > bandwidth_output_full.csv)
+    - f32 type
+
+RAM bandwidth: 23.3 GB/s
+
+
+**ANALYSIS**: 
+- We observed the following trends:
+    1.  As expected, the bandwidth of the L1 cache is higher than the L2 cache, which is higher than the RAM bandwidth.
+    2.  The bandwidth of the both the two caches and the RAM is higher for the Denver-2 compared to the Cortex A-57. This 
+        is evident from the single core execution and even from the multi-core execution, where Denver-2 uses only 2 cores
+        and still has only slightly lower bandwidth than the Cortex A-57 which uses 4 cores.
+    3.  Doubling and quadrupling the number of cores does not lead exactly to doubling or quadrupling the bandwidth.
+        The most efficient increase in bandwidth is observed in the L1 cache, decreasing as we move to the L2 cache and RAM.
+        This is due to the fact that memory consistency and coherence protocols should be implemented to ensure that the data
+        is consistent across all the cores, which leads to some overheads. 
+    4.  The trend of the bandwidth in the full system analysis is less defined, as the bandwidth is influenced by the 
+        communication between cores in different chips. This is evident from the fact that the bandwidth of the RAM in the
+        full system is comparable to the bandwidth of the RAM in the Denver-2, which uses only 2 cores.
+    

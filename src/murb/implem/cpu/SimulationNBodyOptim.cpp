@@ -49,7 +49,6 @@ void SimulationNBodyOptim::computeBodiesAcceleration() {
         const float qy_i = d[iBody].qy;
         const float qz_i = d[iBody].qz;
         
-        #pragma unroll 4
         for (unsigned long jBody = 0; jBody < nBodies; jBody ++) {
             const float rijx = d[jBody].qx - qx_i; // 1 flops
             const float rijy = d[jBody].qy - qy_i; // 1 flops

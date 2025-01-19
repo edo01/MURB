@@ -2,7 +2,6 @@
 #define SIMULATION_N_BODY_GPU_HPP_
 
 #include <string>
-#include <cuda_runtime.h>
 
 #include "core/SimulationNBodyInterface.hpp"
 

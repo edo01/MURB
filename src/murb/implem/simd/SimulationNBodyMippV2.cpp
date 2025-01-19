@@ -69,7 +69,7 @@ void SimulationNBodyMippV2::computeBodiesAcceleration()
 
     const float softSquared = this->soft*this->soft;
 
-    // flops = n*(n-1)/2 * 26
+    // flops = n*(n-1)/2 * 27 + 15*n
     for (unsigned long iBody = 0; iBody < N; iBody++) {
         // accumulators
         mipp::Reg<float> r_ax_i(0.f);
@@ -83,7 +83,7 @@ void SimulationNBodyMippV2::computeBodiesAcceleration()
         const mipp::Reg<float> r_qz_i(qz[iBody]);
         const mipp::Reg<float> r_m_i(m[iBody]);  
 
-        for (jBody = iBody+1; jBody < N-mipp::N<float>(); jBody+=mipp::N<float>()) {
+        for (jBody = iBody+1; jBody <= N-mipp::N<float>(); jBody+=mipp::N<float>()) {
             mipp::Reg<float> r_rijx = mipp::Reg<float>(&qx[jBody]) - r_qx_i; // VECSIZE flop
             mipp::Reg<float> r_rijy = mipp::Reg<float>(&qy[jBody]) - r_qy_i; // VECSIZE flop
             mipp::Reg<float> r_rijz = mipp::Reg<float>(&qz[jBody]) - r_qz_i; // VECSIZE flop
@@ -240,6 +240,7 @@ void SimulationNBodyMippV2::computeBodiesAccelerationMasq(){
 void SimulationNBodyMippV2::computeOneIteration()
 {
     this->initIteration();
+    //this->computeBodiesAccelerationMasq();
     this->computeBodiesAcceleration();
     // time integration
     this->bodies.updatePositionsAndVelocities(this->accelerations, this->dt);

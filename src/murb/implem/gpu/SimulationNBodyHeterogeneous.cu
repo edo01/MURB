@@ -28,7 +28,7 @@
 #include "SimulationNBodyHeterogeneous.hpp"
 #include "commons.cuh"
 
-#define CPU_LOAD 5 // the number of blocks that will be computed by the CPU (+ the reminder of the computation)
+#define CPU_LOAD 7 // the number of blocks that will be computed by the CPU (+ the reminder of the computation)
 
 
 __global__ void

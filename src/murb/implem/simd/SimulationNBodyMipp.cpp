@@ -137,7 +137,6 @@ void SimulationNBodyMipp::computeBodiesAccelerationPadding()
     const mipp::Reg<float> r_G = mipp::Reg<float>(this->G);
     
     // flops = n² * 19 + 9*n
-    //#pragma omp parallel for
     for (unsigned long iBody = 0; iBody < N; iBody+=1) {
         // accumulators
         mipp::Reg<float> r_ax(0.f);
@@ -149,7 +148,6 @@ void SimulationNBodyMipp::computeBodiesAccelerationPadding()
         const mipp::Reg<float> r_qz_i(qz[iBody]);
         unsigned long jBody;
 
-        #pragma unroll 4
         for (jBody = 0; jBody < N; jBody+=mipp::N<float>()) {
             mipp::Reg<float> r_rijx = mipp::Reg<float>(&qx[jBody]) - r_qx_i; // VECSIZE flop
             mipp::Reg<float> r_rijy = mipp::Reg<float>(&qy[jBody]) - r_qy_i; // VECSIZE flop

@@ -1,8 +1,3 @@
-/**
- * @file Octree.cpp
- * @brief Implementation of the Octree data structure.
- */
-
 #include "Octree.hpp"
 #include <iostream>
 
@@ -29,6 +24,14 @@ T BoundingBox<T>::getRadius() {
 template <typename T>
 Octree<T>::Octree(BoundingBox<T> boundary):
     empty(true), divided(false), boundary(boundary){
+    northWestUp = nullptr;
+    northWestDown = nullptr;
+    northEastUp = nullptr;
+    northEastDown = nullptr;
+    southWestUp = nullptr;
+    southWestDown = nullptr;
+    southEastUp = nullptr;
+    southEastDown = nullptr;
 }
 
 template <typename T>
@@ -70,46 +73,60 @@ void Octree<T>::subdivide() {
     BoundingBox<T> seu(p, h / 2);
     p = {x + h / 2, y - h / 2, z - h / 2};
     BoundingBox<T> seb(p, h / 2);
-    this->northWestUp = std::make_unique<Octree<T>>(nwu);
-    this->northWestDown = std::make_unique<Octree<T>>(nwb);
-    this->northEastUp = std::make_unique<Octree<T>>(neu);
-    this->northEastDown = std::make_unique<Octree<T>>(neb);
-    this->southWestUp = std::make_unique<Octree<T>>(swu);
-    this->southWestDown = std::make_unique<Octree<T>>(swb);
-    this->southEastUp = std::make_unique<Octree<T>>(seu);
-    this->southEastDown = std::make_unique<Octree<T>>(seb);
+    this->northWestUp = new Octree<T>(nwu);
+    this->northWestDown = new Octree<T>(nwb);
+    this->northEastUp = new Octree<T>(neu);
+    this->northEastDown = new Octree<T>(neb);
+    this->southWestUp = new Octree<T>(swu);
+    this->southWestDown = new Octree<T>(swb);
+    this->southEastUp = new Octree<T>(seu);
+    this->southEastDown = new Octree<T>(seb);
     divided = true;
 }
 
 template <typename T>
 bool Octree<T>::insert(CoM<T> el) {
-    // If the point is outside the boundary, return false
+    // if the point does not belong to the boundary, return false 
     if (!boundary.containsPoint(el.p)) {
+        /*std::cout << "Point does not belong to the boundary" << std::endl;
+        std::cout << "Point: " << el.p.x << " " << el.p.y << " " << el.p.z << std::endl;
+        std::cout << "Boundary: " << boundary.getCenter().x << " " << boundary.getCenter().y << " " << boundary.getCenter().z << std::endl;
+        */
         return false;
     }
-
-    // If the node is empty and not divided, insert the point
-    if (empty && !divided) {
+    // if the region is not full, not divided, and the point belongs to the boundary, insert the point
+    if (this->empty && !divided) { 
+        /* std::cout << "Point belong to the boundary" << std::endl;
+        std::cout << "Point: " << el.p.x << " " << el.p.y << " " << el.p.z << std::endl;
+        std::cout << "Boundary: " << boundary.getCenter().x << " " << boundary.getCenter().y << " " << boundary.getCenter().z << std::endl;
+        std::cout << "Boundary radius: " << boundary.getRadius() << std::endl; */
         this->empty = false;
         this->com = el;
         return true;
-    }
-
-    // If the node is full but not divided, subdivide and redistribute
-    if (!divided) {
+    
+    // if the region is not divided and full, divide it and insert both the previous point and the new point
+    }else if (!divided) { 
         subdivide();
-        insert(this->com); // Reinsert the existing point into a child node
+        if(northWestUp->insert(this->com));
+        else if(northWestDown->insert(this->com)) ;
+        else if(northEastUp->insert(this->com)) ;
+        else if(northEastDown->insert(this->com)) ;
+        else if(southWestUp->insert(this->com)) ;
+        else if(southWestDown->insert(this->com)) ;
+        else if(southEastUp->insert(this->com)) ;
+        else if(southEastDown->insert(this->com)) ;
     }
+    // if the region is already divided and full, insert the point in one of the children regions
+    if (northWestUp->insert(el)) return true;
+    if (northWestDown->insert(el)) return true;
+    if (northEastUp->insert(el)) return true;
+    if (northEastDown->insert(el)) return true;
+    if (southWestUp->insert(el)) return true;
+    if (southWestDown->insert(el)) return true;
+    if (southEastUp->insert(el)) return true;
+    if (southEastDown->insert(el)) return true;
 
-    // Attempt to insert the new point into one of the child nodes
-    for (auto& child : {northWestUp.get(), northWestDown.get(), northEastUp.get(), northEastDown.get(),
-                        southWestUp.get(), southWestDown.get(), southEastUp.get(), southEastDown.get()}) {
-        if (child && child->insert(el)) {
-            return true;
-        }
-    }
-
-    return false; 
+    return false;
 }
 
 template <typename T>
@@ -192,6 +209,14 @@ void Octree<T>::reset() {
         southEastUp->reset();
         southEastDown->reset();
     }
+    delete northWestUp;
+    delete northWestDown;
+    delete northEastUp;
+    delete northEastDown;
+    delete southWestUp;
+    delete southWestDown;
+    delete southEastUp;
+    delete southEastDown;
     empty = true;
     divided = false;
     this->com = {0.0, 0.0, 0.0, 0.0};

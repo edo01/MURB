@@ -64,7 +64,6 @@ void SimulationNBodyMippOMP::computeBodiesAccelerationPadding()
         const mipp::Reg<float> r_qy_i(qy[iBody]);
         const mipp::Reg<float> r_qz_i(qz[iBody]);
 
-        #pragma unroll 4
         for (unsigned long jBody = 0; jBody < N; jBody+=mipp::N<float>()) {
             mipp::Reg<float> r_rijx = mipp::Reg<float>(&qx[jBody]) - r_qx_i; // VECSIZE flops
             mipp::Reg<float> r_rijy = mipp::Reg<float>(&qy[jBody]) - r_qy_i; // VECSIZE flops

@@ -43,7 +43,6 @@
 #include "commons.cuh"
 
 
-
 /**
  * Here all the computation depends on the size of the tile. In order to work the tile size must be greater than the 
  * number of threads in the block.
@@ -104,7 +103,7 @@ SimulationNBodyGPU::SimulationNBodyGPU(const unsigned long nBodies, const std::s
 void SimulationNBodyGPU::computeOneIteration()
 {   
     const unsigned long N = this->getBodies().getN();
-    const int NTPB = 256;
+    const int NTPB = 128;
     constexpr int TILE_SIZE = NTPB;
     const int NB   = (this->getBodies().getN() + NTPB - 1) / NTPB; 
     const float softSquared =  this->soft*this->soft;
